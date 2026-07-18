@@ -1,8 +1,13 @@
 # github-blocks
 
 Custom SVG modules for GitHub profile READMEs. Each block is a pure function:
-an array of items in, a self-contained SVG string out. Generate the SVG in CI,
-commit it to an output branch, embed it in the README with a plain `<img>`.
+data in, a self-contained SVG string out. Generate the SVG in CI, commit it to
+an output branch, embed it in the README with a plain `<img>`.
+
+**Configurator: <https://okturan.github.io/github-blocks/>** — tune a
+tower-defense battle over your own contribution graph in the browser, then
+copy a ready-made workflow that keeps it updating daily. The site renders
+previews with the exact modules in this repo; nothing is hosted server-side.
 
 Started with the anime section of [okturan/okturan](https://github.com/okturan/okturan);
 more blocks will land here as they get built.
@@ -71,6 +76,22 @@ Render every block with sample data:
 ```sh
 node examples/render-all.mjs   # writes examples/out/*.svg
 ```
+
+### Use lane-defense without writing code
+
+The [configurator](https://okturan.github.io/github-blocks/) generates a
+workflow that checks out this repo at a pinned commit and runs
+`action/generate-lane-defense.mjs` on GitHub's runners — no vendoring, no
+hosting. Config is all env vars: `PROFILE_USER`, `LD_LEVEL` (1–3 or `rotate`),
+`LD_SEED` (int or `daily`), `LD_THEMES`, `LD_TITLE`, `LD_OUT`.
+
+## Repo layout
+
+- `blocks/` — the renderers (pure ESM, no dependencies; run in Node and browsers)
+- `lib/` — shared helpers + contribution-grid fetching/parsing
+- `action/` — CI entry points for consumers' workflows
+- `site/` — the configurator, deployed to GitHub Pages by `.github/workflows/pages.yml`
+- `examples/` — `node examples/render-all.mjs` renders every block with sample data
 
 ## Notes
 

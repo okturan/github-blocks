@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>github-blocks — your commit graph fights back</title>
+<meta name="description" content="Configure an animated tower-defense battle over your GitHub contribution graph and ship it to your profile README. No JavaScript in the SVG — pure baked CSS keyframes.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='3' fill='%230a0e0b'/><rect x='2.5' y='2.5' width='4' height='4' rx='1' fill='%2339d353'/><rect x='9.5' y='2.5' width='4' height='4' rx='1' fill='%23006d32'/><rect x='2.5' y='9.5' width='4' height='4' rx='1' fill='%230e4429'/><rect x='9.5' y='9.5' width='4' height='4' rx='1' fill='%23a371f7'/></svg>">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="wordmark"><span class="tick">▚</span> GITHUB-BLOCKS</div>
+    <a class="repolink" href="https://github.com/okturan/github-blocks">github.com/okturan/github-blocks →</a>
+  </header>
+
+  <section class="hero">
+    <div class="eyebrow">Lane Defense · configurator</div>
+    <h1>YOUR COMMIT GRAPH<br>FIGHTS <span class="alt">BACK</span></h1>
+    <p class="lede">Big commit days become <strong>towers</strong>. Bug waves march down the weekday lanes. The whole battle is simulated from your real contribution grid and baked into a <strong>single SVG with zero JavaScript</strong> — it animates anywhere an <code class="mono">&lt;img&gt;</code> renders, including your GitHub profile README. Tune it below, then ship it.</p>
+
+    <div class="rig">
+      <div class="frame"><img id="preview" alt="Live preview: tower defense battle animated over the configured contribution graph"></div>
+      <div class="statline" id="stats" aria-live="polite"></div>
+
+      <div class="controls">
+        <div class="control">
+          <label for="user">GitHub username</label>
+          <div class="row">
+            <input type="text" id="user" value="okturan" spellcheck="false" autocomplete="off" maxlength="39" placeholder="octocat">
+            <button class="primary" id="load">LOAD GRAPH</button>
+          </div>
+          <p class="hint" id="gridnote">Loading live contribution data…</p>
+        </div>
+
+        <div class="control">
+          <span class="label" id="lvl-label">Difficulty</span>
+          <div class="seg" role="group" aria-labelledby="lvl-label" id="levelseg">
+            <button data-level="1" aria-pressed="false">1 PATROL</button>
+            <button data-level="2" aria-pressed="false">2 SIEGE</button>
+            <button data-level="3" aria-pressed="false">3 OVERRUN</button>
+            <button data-level="rotate" aria-pressed="true">ROTATE DAILY</button>
+          </div>
+          <p class="hint" id="levelnote"></p>
+        </div>
+
+        <div class="control">
+          <span class="label" id="seed-label">Battle seed</span>
+          <div class="seg" role="group" aria-labelledby="seed-label">
+            <button id="seed-daily" aria-pressed="true">NEW EVERY DAY</button>
+            <button id="seed-reroll" aria-pressed="false">🎲 REROLL</button>
+          </div>
+          <p class="hint" id="seednote"></p>
+        </div>
+
+        <div class="control">
+          <span class="label" id="theme-label">Theme</span>
+          <div class="seg" role="group" aria-labelledby="theme-label" id="themeseg">
+            <button data-theme="dark" aria-pressed="true">DARK</button>
+            <button data-theme="light" aria-pressed="false">LIGHT</button>
+          </div>
+          <p class="hint">The workflow ships both; your README swaps them with <code>&lt;picture&gt;</code>.</p>
+        </div>
+
+        <div class="control">
+          <label for="title">Header title</label>
+          <input type="text" id="title" value="COMMIT DEFENSE" maxlength="40" spellcheck="false">
+          <p class="hint">Battle stats are appended automatically.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ship">
+    <h2><span class="n">▸</span>SHIP IT TO YOUR README</h2>
+    <p class="sectionlede">A committed SVG can't randomize per page load — GitHub's image proxy serves cached bytes and scripts never run inside a README. So the workflow below regenerates the battle on a daily schedule instead: with the settings above it bakes a fresh SVG from your live graph and force-pushes it to an <code class="mono">output</code> branch in your profile repo.</p>
+
+    <div class="step">
+      <h3><span class="n">01</span>Add the workflow</h3>
+      <p>In your profile repo (the one named after your username), create <code id="wfpath">.github/workflows/lane-defense.yml</code> with exactly this — it's already personalized from your settings above:</p>
+      <div class="codeblock">
+        <pre id="yaml"></pre>
+        <button class="copy" data-copy="yaml">COPY</button>
+      </div>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">02</span>Run it once</h3>
+      <p>Push the file, open your repo's <b>Actions</b> tab, pick <b>Lane defense</b>, and hit <b>Run workflow</b>. It creates the <code>output</code> branch with your first battle; after that the daily schedule takes over.</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">03</span>Embed it</h3>
+      <p>Paste this into your profile <code>README.md</code> — dark and light themes swap automatically:</p>
+      <div class="codeblock">
+        <pre id="embed"></pre>
+        <button class="copy" data-copy="embed">COPY</button>
+      </div>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">OR</span>Just take the file</h3>
+      <p>No workflow, no updates — download the exact battle you configured above and commit it anywhere:</p>
+      <div class="btnrow">
+        <button id="dl-dark">DOWNLOAD DARK SVG</button>
+        <button id="dl-light">DOWNLOAD LIGHT SVG</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="blocks">
+    <h2><span class="n">▸</span>THE REST OF THE LIBRARY</h2>
+    <p class="sectionlede">Lane Defense is one block of several. Each is a pure function — data in, self-contained SVG out — that runs identically in your browser (these previews), in GitHub Actions, and in Node. Sample data shown; see the <a href="https://github.com/okturan/github-blocks#usage">repo usage docs</a> to feed them your own.</p>
+    <div class="gallery" id="gallery"></div>
+  </section>
+
+  <section id="how">
+    <h2><span class="n">▸</span>HOW IT WORKS</h2>
+    <div class="facts">
+      <div class="fact">
+        <h3>Simulated, then baked</h3>
+        <p>The tower-defense sim runs to completion at generation time. Every laser, kill, and leak becomes a CSS keyframe — the SVG that ships contains no logic, just choreography.</p>
+      </div>
+      <div class="fact">
+        <h3>Deterministic by design</h3>
+        <p>Same grid + level + seed → the identical battle, every render, both themes. That's what makes daily rotation honest: the cron changes the seed, not dice at view time.</p>
+      </div>
+      <div class="fact">
+        <h3>Balanced for any profile</h3>
+        <p>Level-3+ commit days garrison the graph. Sparse profiles promote level-2 days, dense ones get thinned, and enemy HP scales with tower count — PATROL sweeps, SIEGE leaks a few, OVERRUN ends badly.</p>
+      </div>
+      <div class="fact">
+        <h3>Nothing to host</h3>
+        <p>The workflow runs in your repo on GitHub's runners and commits the SVG to your own output branch. This page is static files on GitHub Pages; live previews fetch grids from the community <a href="https://github.com/grubersjoe/github-contributions-api">github-contributions-api</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    BUILT BY <a href="https://github.com/okturan">OKTURAN</a> · MODULES &amp; DOCS AT <a href="https://github.com/okturan/github-blocks">GITHUB-BLOCKS</a> · SVGS PAUSE UNDER REDUCED-MOTION
+  </footer>
+
+</div>
+<script type="module" src="./app.mjs"></script>
+</body>
+</html>
