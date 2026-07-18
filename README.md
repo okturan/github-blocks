@@ -12,6 +12,25 @@ previews with the exact modules in this repo; nothing is hosted server-side.
 Started with the anime section of [okturan/okturan](https://github.com/okturan/okturan);
 more blocks will land here as they get built.
 
+## See them move
+
+These are committed outputs from the actual renderers, not mockups. Click any
+battle to open the configurator and generate the same kind of block for your
+own contribution graph.
+
+<p>
+  <a href="https://okturan.github.io/github-blocks/"><img width="896" alt="Lane Defense animating a tower-defense battle over a GitHub contribution graph" src="./examples/out/lane-defense.svg"></a>
+</p>
+<p>
+  <a href="https://okturan.github.io/github-blocks/"><img width="896" alt="Night Shift routing enemies through a contribution graph while nearby towers fire" src="./examples/out/night-shift.svg"></a>
+</p>
+<p>
+  <a href="https://okturan.github.io/github-blocks/"><img width="896" alt="Boss Fight pitting contribution cells against an animated snake boss" src="./examples/out/boss-fight.svg"></a>
+</p>
+<p>
+  <a href="./examples/out/cinematic-strip.svg"><img width="896" alt="Cinematic Strip rendering three media covers as a wide profile card" src="./examples/out/cinematic-strip.svg"></a>
+</p>
+
 ## Blocks
 
 | Block | Size (3 items) | Look |
@@ -78,6 +97,10 @@ Render every block with sample data:
 ```sh
 node examples/render-all.mjs   # writes examples/out/*.svg
 ```
+
+The verification workflow rerenders all eight examples and fails if the
+committed SVGs drift, if the README gallery points at missing output, or if an
+output introduces executable script content.
 
 ### Use the defense blocks without writing code
 
