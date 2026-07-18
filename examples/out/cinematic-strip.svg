@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="896" height="190" role="img" aria-label="Shinsekai yori, Mononoke, DAN DA DAN">
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    a { cursor: pointer; }
+    
+  </style>
+  <defs>
+    <linearGradient id="strip-fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0d1117" stop-opacity="0.06"/>
+      <stop offset="0.5" stop-color="#0d1117" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#0d1117" stop-opacity="0.95"/>
+    </linearGradient>
+  </defs>
+  
+    <a href="https://anilist.co/anime/13125/Shinsekai-yori/">
+      <clipPath id="strip-clip-0"><rect x="0" y="0" width="286" height="190" rx="14"/></clipPath>
+      
+    <rect x="0" y="0" width="286" height="190" rx="10" fill="#1f3a5f"/>
+    <text x="143" y="106.33333333333333" text-anchor="middle" font-size="34" font-weight="700" fill="#e6edf3">SY</text>
+  
+      <rect x="0" y="0" width="286" height="190" rx="14" fill="url(#strip-fade)" clip-path="url(#strip-clip-0)"/>
+      <text x="18" y="166" font-size="18" font-weight="800" fill="#ffffff">Shinsekai yori<tspan dx="9" font-size="12.5" font-weight="500" fill="#e6edf3" opacity="0.75">2012</tspan></text>
+      <rect x="0.5" y="0.5" width="285" height="189" rx="13.5" fill="none" stroke="#f0f6fc" stroke-opacity="0.14"/>
+    </a>
+
+    <a href="https://anilist.co/anime/2246/Mononoke/">
+      <clipPath id="strip-clip-1"><rect x="305" y="0" width="286" height="190" rx="14"/></clipPath>
+      
+    <rect x="305" y="0" width="286" height="190" rx="10" fill="#7a4a1f"/>
+    <text x="448" y="106.33333333333333" text-anchor="middle" font-size="34" font-weight="700" fill="#e6edf3">M</text>
+  
+      <rect x="305" y="0" width="286" height="190" rx="14" fill="url(#strip-fade)" clip-path="url(#strip-clip-1)"/>
+      <text x="323" y="166" font-size="18" font-weight="800" fill="#ffffff">Mononoke<tspan dx="9" font-size="12.5" font-weight="500" fill="#e6edf3" opacity="0.75">2007</tspan></text>
+      <rect x="305.5" y="0.5" width="285" height="189" rx="13.5" fill="none" stroke="#f0f6fc" stroke-opacity="0.14"/>
+    </a>
+
+    <a href="https://anilist.co/anime/171018/DAN-DA-DAN/">
+      <clipPath id="strip-clip-2"><rect x="610" y="0" width="286" height="190" rx="14"/></clipPath>
+      
+    <rect x="610" y="0" width="286" height="190" rx="10" fill="#5f1f4a"/>
+    <text x="753" y="106.33333333333333" text-anchor="middle" font-size="34" font-weight="700" fill="#e6edf3">DDD</text>
+  
+      <rect x="610" y="0" width="286" height="190" rx="14" fill="url(#strip-fade)" clip-path="url(#strip-clip-2)"/>
+      <text x="628" y="166" font-size="18" font-weight="800" fill="#ffffff">DAN DA DAN<tspan dx="9" font-size="12.5" font-weight="500" fill="#e6edf3" opacity="0.75">2024</tspan></text>
+      <rect x="610.5" y="0.5" width="285" height="189" rx="13.5" fill="none" stroke="#f0f6fc" stroke-opacity="0.14"/>
+    </a>
+</svg>
