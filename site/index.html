@@ -15,8 +15,7 @@
     <div class="wordmark"><span class="tick">▚</span> GITHUB-BLOCKS</div>
     <nav class="topnav">
       <a href="#pick">CONFIGURE</a>
-      <a href="#library">LIBRARY</a>
-      <a href="#how">HOW IT WORKS</a>
+      <a href="#library">MEDIA CARDS</a>
       <a href="https://github.com/okturan/github-blocks">GITHUB →</a>
     </nav>
   </header>
@@ -107,6 +106,7 @@
       <button role="tab" id="tab-workflow" aria-selected="true" aria-controls="panel-workflow">WORKFLOW</button>
       <button role="tab" id="tab-embed" aria-selected="false" aria-controls="panel-embed">EMBED</button>
       <button role="tab" id="tab-download" aria-selected="false" aria-controls="panel-download">DOWNLOAD</button>
+      <button role="tab" id="tab-how" aria-selected="false" aria-controls="panel-how">HOW IT WORKS</button>
     </div>
 
     <div class="tabpanel" role="tabpanel" id="panel-workflow" aria-labelledby="tab-workflow">
@@ -130,6 +130,31 @@
       <div class="btnrow">
         <button id="dl-dark">DOWNLOAD DARK SVG</button>
         <button id="dl-light">DOWNLOAD LIGHT SVG</button>
+      </div>
+    </div>
+
+    <div class="tabpanel" role="tabpanel" id="panel-how" aria-labelledby="tab-how" hidden>
+      <div class="facts">
+        <div class="fact fact-block">
+          <h3 id="how-name">The game</h3>
+          <p id="how-text"></p>
+        </div>
+        <div class="fact">
+          <h3>Simulated, then baked</h3>
+          <p>The sim runs once, at generation time. Every laser flash and every death becomes a CSS keyframe. The SVG that ships contains no code, only choreography.</p>
+        </div>
+        <div class="fact">
+          <h3>Deterministic</h3>
+          <p>Same grid, same level, same seed: the identical battle, in both themes. Rotation comes from the cron changing the seed each day, not from dice at view time.</p>
+        </div>
+        <div class="fact">
+          <h3>Balanced to your graph</h3>
+          <p>Days at contribution level 3 or 4 become towers. A sparse graph promotes level-2 days until there are at least eight; a dense one gets thinned, and enemy HP scales with the tower count. Level 1 is winnable everywhere. Level 3 is not.</p>
+        </div>
+        <div class="fact">
+          <h3>Nothing to host</h3>
+          <p>The workflow runs on GitHub's runners and commits to your own repo. This page is static files on GitHub Pages. Live grid previews come from <a href="https://github.com/grubersjoe/github-contributions-api">grubersjoe's contributions API</a>; when it's unreachable, previews fall back to a sample grid.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -171,28 +196,6 @@
       <div class="codeblock">
         <pre id="media-code"></pre>
         <button class="copy" data-copy="media-code">COPY</button>
-      </div>
-    </div>
-  </section>
-
-  <section id="how">
-    <h2><span class="n">▸</span>HOW IT WORKS</h2>
-    <div class="facts">
-      <div class="fact">
-        <h3>Simulated, then baked</h3>
-        <p>The sim runs once, at generation time. Every laser flash and every death becomes a CSS keyframe. The SVG that ships contains no code, only choreography.</p>
-      </div>
-      <div class="fact">
-        <h3>Deterministic</h3>
-        <p>Same grid, same level, same seed: the identical battle, in both themes. Rotation comes from the cron changing the seed each day, not from dice at view time.</p>
-      </div>
-      <div class="fact">
-        <h3>Balanced to your graph</h3>
-        <p>Days at contribution level 3 or 4 become towers. A sparse graph promotes level-2 days until there are at least eight; a dense one gets thinned to thirty, and enemy HP scales with the tower count. Level 1 is winnable everywhere. Level 3 is not.</p>
-      </div>
-      <div class="fact">
-        <h3>Nothing to host</h3>
-        <p>The workflow runs on GitHub's runners and commits to your own repo. This page is static files on GitHub Pages. Live previews come from <a href="https://github.com/grubersjoe/github-contributions-api">grubersjoe's contributions API</a>; when it's unreachable, previews fall back to a sample grid.</p>
       </div>
     </div>
   </section>

@@ -22,6 +22,8 @@ const REGISTRY = {
     rotateHint: (name) => `Cycles PATROL → SIEGE → OVERRUN each day (today: ${name}).`,
     fixedHint: (name) => `Fixed at ${name} on every regeneration.`,
     alt: "Tower defense preview: bug waves march the weekday rows while towers on big commit days fire lasers",
+    howName: "How Lane Defense plays",
+    how: "Bugs spawn in bursts and march the weekday rows at different speeds — red ones are weak, orange tougher, purple are tanks. Any tower within range lases the front-runner on a fixed cooldown. Whatever the towers miss walks off the right edge as a leak.",
   },
   "night-shift": {
     fn: nightShift,
@@ -32,6 +34,8 @@ const REGISTRY = {
     rotateHint: (name) => `Cycles PATROL → SIEGE → OVERRUN each day (today: ${name}).`,
     fixedHint: (name) => `Fixed at ${name} on every regeneration.`,
     alt: "Tower defense preview: creeps follow a winding road through the graph while towers fire plasma bolts",
+    howName: "How Night Shift plays",
+    how: "Creeps run the road — Monday row out, Wednesday back, Friday out — in tight waves, so the front-runner soaks fire while the pack advances. Only towers near the road take part, and they lead every shot by 0.22 seconds: bolts land where the creep will be, not where it was.",
   },
   "boss-fight": {
     fn: bossFight,
@@ -42,6 +46,8 @@ const REGISTRY = {
     rotateHint: (name) => `Cycles the ending each day (today: ${name}). On CONSUMED, the snake wins.`,
     fixedHint: (name) => name === "CONSUMED" ? "The towers lose. The graph gets eaten, every run." : `The snake goes down at ${name === "ROUT" ? "about half" : "86%"} of its run, every time.`,
     alt: "Boss fight preview: a snake eats commit cells while every fortified day fires lasers at it",
+    howName: "How Boss Fight plays",
+    how: "The snake serpentines through the graph at constant speed, eating unfortified cells as its head passes; level-2+ days hold and fire on the head about once a second when it's in range. The ending sets its HP: on ROUT it dies at about half its run, on LAST STAND at 86%, and on CONSUMED the towers can't land enough hits — the graph gets eaten.",
   },
 };
 
@@ -147,6 +153,8 @@ function syncBlockUI() {
     if (b.dataset.level !== "rotate") b.textContent = `${b.dataset.level} ${r.levelNames[+b.dataset.level - 1]}`;
   });
   document.querySelector("#lvl-label").textContent = r.levelWord;
+  $("how-name").textContent = r.howName;
+  $("how-text").textContent = r.how;
   if (!state.titleDirty) {
     state.title = r.defaultTitle;
     $("title").value = r.defaultTitle;
@@ -494,7 +502,7 @@ $("title").addEventListener("input", () => {
 });
 
 // Output tabs.
-const tabs = ["workflow", "embed", "download"];
+const tabs = ["workflow", "embed", "download", "how"];
 for (const t of tabs) {
   $(`tab-${t}`).addEventListener("click", () => {
     for (const o of tabs) {
