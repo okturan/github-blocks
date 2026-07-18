@@ -38,7 +38,7 @@ own contribution graph.
 | `cinematic-strip` | 896×190 | Cover art as card backdrop under a gradient; title + year overlaid. |
 | `poster-cards` | 896×446 | Full-bleed posters with title, meta + score, genre chips. |
 | `media-list` | 896×340 | One panel, numbered rows; meta and score right-aligned. |
-| `classic-cards` | 860×220 | The original okturan layout: dark panel, small cover, title + meta. |
+| `classic-cards` | 878×220 | The original okturan layout: dark panel, small cover, title + meta. |
 | `lane-defense` | 896×169 | Animated tower defense over your contribution graph: big commit days are towers, bug waves march the weekday lanes. Pre-simulated, baked to CSS keyframes — no JS. |
 | `night-shift` | 896×169 | Creeps follow a serpentine road through the graph; towers near the road fire plasma bolts with real intercept leads. |
 | `boss-fight` | 896×169 | The snk snake returns as a boss and eats commit cells while every level-2+ day fires on it. Three endings: ROUT, LAST STAND, CONSUMED (the snake wins). |
@@ -98,9 +98,11 @@ Render every block with sample data:
 node examples/render-all.mjs   # writes examples/out/*.svg
 ```
 
-The verification workflow rerenders all eight examples and fails if the
-committed SVGs drift, if the README gallery points at missing output, or if an
-output introduces executable script content.
+The verification workflow runs dependency-free Node behavior tests for GitHub
+contribution parsing, XML and active-link safety, media-layout contracts,
+deterministic defense outcomes, and reduced-motion output. It then rerenders
+all eight examples and fails if the committed SVGs drift, if the README gallery
+points at missing output, or if an output introduces executable script content.
 
 ### Use the defense blocks without writing code
 

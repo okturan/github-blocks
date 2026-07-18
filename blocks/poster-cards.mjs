@@ -1,12 +1,12 @@
 // Poster cards — vertical cards with full-bleed cover art on top; title,
 // year / episodes / score, and genre chips below. 896 x 446 for three items.
-import { palette, svgShell, xml, cover } from "../lib/helpers.mjs";
+import { palette, svgShell, xml, safeHref, safeId, cover } from "../lib/helpers.mjs";
 
 export function posterCards(items, { width = 896, height = 446, posterHeight = 336, gap = 19, idPrefix = "poster" } = {}) {
   const cardW = (width - gap * (items.length - 1)) / items.length;
   const cards = items.map((item, i) => {
     const x = Math.round(i * (cardW + gap));
-    const clipId = `${idPrefix}-clip-${i}`;
+    const clipId = safeId(`${idPrefix}-clip-${i}`);
     let chipX = x + 18;
     const chips = (item.genres ?? []).map((genre) => {
       const w = Math.round(genre.length * 5.8 + 18);
@@ -19,7 +19,7 @@ export function posterCards(items, { width = 896, height = 446, posterHeight = 3
     const meta = [`${item.year} · ${item.episodes} episodes`, item.score ? `★ ${(item.score / 10).toFixed(1)}` : null]
       .filter(Boolean).join(" · ");
     return `
-    <a href="${xml(item.url)}">
+    <a href="${safeHref(item.url)}">
       <clipPath id="${clipId}"><rect x="${x}" y="0" width="${cardW}" height="${height}" rx="14"/></clipPath>
       <rect x="${x}" y="0" width="${cardW}" height="${height}" rx="14" fill="${palette.panel}"/>
       ${cover(item, x, 0, cardW, posterHeight, clipId, 34)}
