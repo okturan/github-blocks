@@ -274,7 +274,10 @@ function mapMedia(m) {
 async function inlineCover(item) {
   if (!item.coverUrl) return;
   try {
-    const blob = await (await fetch(item.coverUrl, { mode: "cors" })).blob();
+    // cache: "reload" skips the HTTP cache — a plain <img> load of the same
+    // URL caches a response without CORS headers (the CDN varies on Origin),
+    // and reading that entry here would fail the CORS check.
+    const blob = await (await fetch(item.coverUrl, { mode: "cors", cache: "reload" })).blob();
     item.cover = await new Promise((ok, err) => {
       const r = new FileReader();
       r.onload = () => ok(r.result);
@@ -306,6 +309,7 @@ function renderMedia() {
   for (const item of media.items) {
     const li = document.createElement("li");
     const thumb = document.createElement("img");
+    thumb.crossOrigin = "anonymous"; // keep the CDN cache entry CORS-clean
     thumb.src = item.cover || item.coverUrl;
     thumb.alt = "";
     const t = document.createElement("span");
@@ -390,6 +394,7 @@ $("anime-q").addEventListener("input", () => {
         const btn = document.createElement("button");
         btn.setAttribute("role", "option");
         const thumb = document.createElement("img");
+        thumb.crossOrigin = "anonymous";
         thumb.src = m.coverImage?.large || "";
         thumb.alt = "";
         thumb.loading = "lazy";
