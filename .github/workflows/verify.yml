@@ -29,7 +29,10 @@ jobs:
           node-version: 24
 
       - name: Check JavaScript syntax
-        run: find blocks lib action examples scripts -name '*.mjs' -print0 | xargs -0 -n1 node --check
+        run: find blocks lib action examples scripts tests -name '*.mjs' -print0 | xargs -0 -n1 node --check
+
+      - name: Run behavior contracts
+        run: node --test tests/*.test.mjs
 
       - name: Rebuild deterministic examples
         run: node examples/render-all.mjs
