@@ -135,9 +135,44 @@
   </section>
 
   <section id="library">
-    <h2><span class="n">▸</span>THE REST OF THE LIBRARY</h2>
-    <p class="sectionlede">Four more blocks render media cards — covers, scores, genre chips — from a list of items you pass in. The previews here use sample data, because cover art has to be fetched and inlined at generation time. Usage is in the <a href="https://github.com/okturan/github-blocks#usage">repo README</a>.</p>
-    <div class="gallery" id="gallery"></div>
+    <h2><span class="n">▸</span>MEDIA CARDS</h2>
+    <p class="sectionlede">Four layouts that render a media shelf — covers, scores, genre chips — from items you pick. Search hits AniList's public API; covers are fetched in your browser and inlined into the SVG, so the preview is exactly what CI produces. Links go to MyAnimeList when it has the entry.</p>
+
+    <div class="controls">
+      <div class="control search-wrap">
+        <label for="anime-q">Add anime</label>
+        <input type="text" id="anime-q" placeholder="Search — try Mononoke" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="anime-results">
+        <div class="results" id="anime-results" role="listbox" hidden></div>
+        <p class="hint" id="media-note">AniList search. Up to six items.</p>
+      </div>
+
+      <div class="control">
+        <span class="label" id="layout-label">Layout</span>
+        <div class="seg" role="group" aria-labelledby="layout-label" id="layoutseg">
+          <button data-layout="cinematic-strip" aria-pressed="true">STRIP</button>
+          <button data-layout="poster-cards" aria-pressed="false">POSTERS</button>
+          <button data-layout="media-list" aria-pressed="false">LIST</button>
+          <button data-layout="classic-cards" aria-pressed="false">CLASSIC</button>
+        </div>
+        <p class="hint">The same four renderers a workflow would call.</p>
+      </div>
+
+      <div class="control">
+        <span class="label">Selected</span>
+        <ul class="picked" id="picked"></ul>
+      </div>
+    </div>
+
+    <div class="frame media-frame"><img id="media-preview" alt="Preview of the selected media-card layout with the chosen anime"></div>
+
+    <div class="step">
+      <h3><span class="n">▸</span>Generate it in CI</h3>
+      <p>Media cards don't ship with a ready-made workflow yet — your list rarely changes, so most people regenerate by hand or from their own script. This snippet reproduces the preview above, covers included:</p>
+      <div class="codeblock">
+        <pre id="media-code"></pre>
+        <button class="copy" data-copy="media-code">COPY</button>
+      </div>
+    </div>
   </section>
 
   <section id="how">
