@@ -1,13 +1,11 @@
-// Lane Defense — a tower-defense battle fought over a GitHub contribution
-// grid. Big commit days become towers; bug waves march down the weekday
-// lanes. The whole battle is simulated up front and baked into CSS keyframes,
-// so the SVG animates anywhere an <img> renders — GitHub READMEs included.
-//
-// Pure function of (grid, opts): the same grid + level + seed always produces
-// the identical battle. Rotate `level`/`seed` per CI run for a fresh battle on
-// each regeneration (a committed SVG cannot randomize per page load — GitHub's
-// camo proxy serves cached bytes and scripts don't run inside <img>).
-import { svgShell, xml } from "../lib/helpers.mjs";
+// Lane Defense — bug waves march straight down the weekday rows; towers on
+// big commit days shoot lasers at whatever's in range. Pure function of
+// (grid, opts): same grid + level + seed → the identical battle.
+import {
+  BASE_THEMES, PITCH, CELL, ROWS, f, cellY, gridWidth, mulberry32,
+  makeDoc, beam, burst, hitFlash, drawCells, towerMarkers, muzzles,
+  pickTowers, hpScale, defenseShell,
+} from "../lib/engine.mjs";
 
 export const LEVELS = [
   { name: "PATROL", waves: 3, perWave: 5, waveGap: 7, hp: [2, 3, 5], speed: [42, 60], cooldown: 1.55, mix: [0.55, 0.85] },
@@ -15,68 +13,31 @@ export const LEVELS = [
   { name: "OVERRUN", waves: 5, perWave: 7, waveGap: 8, hp: [5, 8, 13], speed: [48, 68], cooldown: 1.9, mix: [0.35, 0.65] },
 ];
 
-const THEMES = {
-  light: {
-    bg: "#ffffff", fg: "#24292f", dim: "#8b949e",
-    pal: ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"],
-    turret: "#0a3069", ring: "#ffffff", laser: "#1a7f37", muzzle: "#dafbe1",
-    bugs: ["#fa4549", "#e16f24", "#8250df"],
-  },
-  dark: {
-    bg: "#0d1117", fg: "#e6edf3", dim: "#7d8590",
-    pal: ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"],
-    turret: "#f0883e", ring: "#0d1117", laser: "#39d353", muzzle: "#2ea04366",
-    bugs: ["#f85149", "#d29922", "#a371f7"],
-  },
+const ACCENTS = {
+  light: { turret: "#0a3069", ring: "#ffffff", laser: "#1a7f37", muzzle: "#dafbe1", bugs: ["#fa4549", "#e16f24", "#8250df"] },
+  dark: { turret: "#f0883e", ring: "#0d1117", laser: "#39d353", muzzle: "#2ea04366", bugs: ["#f85149", "#d29922", "#a371f7"] },
 };
 
-const PITCH = 15, CELL = 12, RX = 2.5, ROWS = 7, RANGE = 50, DT = 0.05;
-const f = (n) => +n.toFixed(2);
-
-function mulberry32(seed) {
-  let a = seed >>> 0;
-  return () => {
-    a |= 0; a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+const RANGE = 50, DT = 0.05;
 
 export function laneDefense(grid, {
-  level = 2,            // 1..3 — difficulty (LEVELS[level - 1])
-  seed = 1337,          // any int — wave composition, lanes, speeds
-  theme = "dark",       // "dark" | "light"
+  level = 2,
+  seed = 1337,
+  theme = "dark",
   title = "COMMIT DEFENSE",
-  width = 896,          // rendered width; height keeps aspect
-  onStats,              // optional ({ towers, enemies, kills, leaked, duration }) => void
+  width = 896,
+  onStats,
 } = {}) {
   if (!Array.isArray(grid) || !grid.length || grid[0].length !== ROWS) {
     throw new Error("grid must be weeks × 7 array of levels 0–4 (see lib/contrib.mjs)");
   }
   const cfg = LEVELS[Math.min(Math.max(level, 1), LEVELS.length) - 1];
-  const th = THEMES[theme] ?? THEMES.dark;
+  const th = { ...(BASE_THEMES[theme] ?? BASE_THEMES.dark), ...(ACCENTS[theme] ?? ACCENTS.dark) };
   const rnd = mulberry32(seed);
+  const GW = gridWidth(grid.length);
 
-  const COLS = grid.length;
-  const GW = COLS * PITCH - (PITCH - CELL);
-  const cx = (c) => c * PITCH + CELL / 2;
-  const cy = (r) => r * PITCH + CELL / 2;
-
-  // Towers: level-3+ days; sparse graphs promote level-2 days so every grid
-  // gets a garrison, dense ones are thinned so the waves stand a chance.
-  let sites = [];
-  for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
-    if (grid[c][r] >= 2) sites.push({ c, r, lvl: grid[c][r] });
-  }
-  let towers = sites.filter((s) => s.lvl >= 3);
-  if (towers.length < 8) towers = towers.concat(sites.filter((s) => s.lvl === 2)).slice(0, 8);
-  if (towers.length > 30) towers = towers.filter((_, i) => i % Math.ceil(towers.length / 30) === 0);
-  towers = towers.map((s) => ({ ...s, x: cx(s.c), y: cy(s.r), cd: 0, fires: [] }));
-
-  // Enemy HP scales with garrison strength so any profile balances.
-  const hpScale = Math.min(Math.max(towers.length / 14, 0.75), 2.2);
-  const scaledHp = (base) => Math.max(1, Math.round(base * hpScale));
+  const towers = pickTowers(grid);
+  const scale = hpScale(towers.length);
 
   const enemies = [];
   for (let w = 0; w < cfg.waves; w++) for (let i = 0; i < cfg.perWave; i++) {
@@ -86,56 +47,19 @@ export function laneDefense(grid, {
       t0: 1 + w * cfg.waveGap + i * 0.55 + rnd() * 0.35,
       row: Math.floor(rnd() * ROWS),
       v: cfg.speed[0] + rnd() * (cfg.speed[1] - cfg.speed[0]),
-      hp: scaledHp(cfg.hp[tier]),
+      hp: Math.max(1, Math.round(cfg.hp[tier] * scale)),
       tier, hits: [], death: null, exitT: null, alive: true,
     });
   }
   const lastT0 = Math.max(...enemies.map((e) => e.t0));
   const D = Math.ceil(lastT0 + (GW + 46) / cfg.speed[0] + 1.3);
+  const doc = makeDoc(D);
 
-  // ---- keyframe baking ----
-  let animId = 0;
-  const css = [], els = [];
-  const pct = (t) => Math.min(99.99, Math.max(0, (t / D) * 100));
-  const anim = (frames, base) => {
-    const name = "a" + (animId++).toString(36);
-    const parts = frames
-      .map(([t, p]) => [t === "0" ? 0 : t === "100" ? 100 : pct(t), p])
-      .sort((a, b) => a[0] - b[0])
-      .map(([p, s]) => `${p.toFixed(3)}%{${s}}`).join("");
-    css.push(`@keyframes ${name}{${parts}}`);
-    return `animation:${name} ${D}s linear infinite;${base || ""}`;
-  };
-  const el = (tag, attrs, style) => {
-    const a = Object.entries(attrs).map(([k, v]) => `${k}="${v}"`).join(" ");
-    els.push(`<${tag} ${a}${style ? ` style="${style}"` : ""}/>`);
-  };
-
-  const beam = (x1, y1, x2, y2, t) => {
-    const frames = [["0", "opacity:0"], [t - 0.01, "opacity:0"], [t, "opacity:1"], [t + 0.13, "opacity:0"], ["100", "opacity:0"]];
-    el("line", { x1: f(x1), y1: f(y1), x2: f(x2), y2: f(y2), stroke: th.laser, "stroke-width": 5, "stroke-opacity": 0.25, "stroke-linecap": "round" }, anim(frames, "opacity:0"));
-    el("line", { x1: f(x1), y1: f(y1), x2: f(x2), y2: f(y2), stroke: th.laser, "stroke-width": 2, "stroke-linecap": "round" }, anim(frames, "opacity:0"));
-  };
-  const burst = (x, y, t, color) => {
-    for (let i = 0; i < 6; i++) {
-      const ang = (i / 6) * Math.PI * 2 + rnd() * 0.8;
-      const d = 14 * (0.7 + rnd() * 0.6);
-      el("circle", { cx: 0, cy: 0, r: f(2 + rnd() * 1.2), fill: color }, anim([
-        ["0", "opacity:0"],
-        [t - 0.01, `opacity:0;transform:translate(${f(x)}px,${f(y)}px) scale(1)`],
-        [t, "opacity:1"],
-        [t + 0.45, `opacity:0;transform:translate(${f(x + Math.cos(ang) * d)}px,${f(y + Math.sin(ang) * d)}px) scale(0.3)`],
-        ["100", "opacity:0"],
-      ], "opacity:0"));
-    }
-  };
-
-  // ---- simulate ----
   for (let t = 0; t < D - 1; t += DT) {
     for (const e of enemies) {
       if (!e.alive || t < e.t0) continue;
       e.x = -16 + (t - e.t0) * e.v;
-      e.y = cy(e.row);
+      e.y = cellY(e.row);
       if (e.x > GW + 14 && !e.exitT) { e.exitT = t; e.alive = false; }
     }
     for (const tw of towers) {
@@ -150,7 +74,7 @@ export function laneDefense(grid, {
       if (best) {
         tw.cd = cfg.cooldown;
         tw.fires.push(t);
-        beam(tw.x, tw.y, best.x, best.y, t);
+        beam(doc, tw.x, tw.y, best.x, best.y, t, th.laser);
         best.hits.push(t);
         if (--best.hp <= 0) { best.alive = false; best.death = { t, x: best.x, y: best.y }; }
       }
@@ -158,28 +82,18 @@ export function laneDefense(grid, {
   }
   const kills = enemies.filter((e) => e.death).length;
 
-  // ---- draw (beams were emitted during the sim; lift them above the grid) ----
-  const beamEls = els.splice(0);
-  for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
-    el("rect", { x: c * PITCH, y: r * PITCH, width: CELL, height: CELL, rx: RX, fill: th.pal[grid[c][r]] });
-  }
-  for (const tw of towers) {
-    el("circle", { cx: tw.x, cy: tw.y, r: 3.2, fill: "none", stroke: th.ring, "stroke-width": 1.2 });
-    el("circle", { cx: tw.x, cy: tw.y, r: 1.5, fill: th.turret });
-    if (tw.fires.length) {
-      const frames = [["0", "opacity:0"]];
-      for (const t of tw.fires) frames.push([t - 0.01, "opacity:0"], [t, "opacity:0.9"], [t + 0.16, "opacity:0"]);
-      frames.push(["100", "opacity:0"]);
-      el("rect", { x: tw.c * PITCH - 1, y: tw.r * PITCH - 1, width: CELL + 2, height: CELL + 2, rx: RX + 1, fill: th.muzzle }, anim(frames, "opacity:0"));
-    }
-  }
-  els.push(...beamEls);
+  // Beams were emitted during the sim; lift them above the grid cells.
+  const beamEls = doc.lift();
+  drawCells(doc, grid, th.pal);
+  towerMarkers(doc, towers, th.ring, th.turret);
+  muzzles(doc, towers, th.muzzle);
+  doc.els.push(...beamEls);
 
   for (const e of enemies) {
     const tEnd = e.death ? e.death.t : Math.min(e.exitT ?? (e.t0 + (GW + 30) / e.v), D - 0.3);
     const xEnd = e.death ? e.death.x : -16 + (tEnd - e.t0) * e.v;
-    const y = cy(e.row), color = th.bugs[e.tier], r = [4, 4.6, 5.4][e.tier];
-    const move = anim([
+    const y = cellY(e.row), color = th.bugs[e.tier], r = [4, 4.6, 5.4][e.tier];
+    const move = doc.anim([
       ["0", `opacity:0;transform:translate(-16px,${f(y)}px)`],
       [e.t0, `opacity:0;transform:translate(-16px,${f(y)}px)`],
       [e.t0 + 0.05, "opacity:1"],
@@ -187,36 +101,19 @@ export function laneDefense(grid, {
       [tEnd + 0.01, "opacity:0"],
       ["100", "opacity:0"],
     ], "opacity:0");
-    let flash = "";
-    if (e.hits.length) {
-      const frames = [["0", "opacity:0"]];
-      for (const t of e.hits) frames.push([t - 0.01, "opacity:0"], [t, "opacity:0.9"], [t + 0.09, "opacity:0"]);
-      frames.push(["100", "opacity:0"]);
-      flash = `<circle r="${f(r + 1.5)}" fill="#ffffff" style="${anim(frames, "opacity:0")}"/>`;
-    }
-    els.push(`<g style="${move}">` +
+    doc.raw(`<g style="${move}">` +
       `<ellipse rx="${r}" ry="${f(r * 0.78)}" fill="${color}"/>` +
       `<circle cx="${f(r * 0.85)}" cy="0" r="${f(r * 0.55)}" fill="${color}"/>` +
-      `<circle cx="${f(r * 0.95)}" cy="-1" r="0.9" fill="#ffffff"/>` + flash + `</g>`);
-    if (e.death) burst(e.death.x, e.death.y, e.death.t, color);
+      `<circle cx="${f(r * 0.95)}" cy="-1" r="0.9" fill="#ffffff"/>` +
+      hitFlash(doc, e.hits, r + 1.5) + `</g>`);
+    if (e.death) burst(doc, e.death.x, e.death.y, e.death.t, color, rnd);
   }
 
-  const stats = { towers: towers.length, enemies: enemies.length, kills, leaked: enemies.length - kills, duration: D };
-  onStats?.(stats);
+  onStats?.({ towers: towers.length, enemies: enemies.length, kills, leaked: enemies.length - kills, duration: D });
 
-  const subtitle = `LVL ${level} ${cfg.name} · ${towers.length} TOWERS · ${kills}/${enemies.length} DOWN`;
-  const vbW = GW + 20, vbH = ROWS * PITCH + 48;
-  const body = `<rect x="-10" y="-36" width="${vbW}" height="${vbH}" rx="6" fill="${th.bg}"/>
-  <text class="td-t" x="0" y="-16" font-size="11" fill="${th.fg}" letter-spacing="2">${xml(title)}</text>
-  <text class="td-t" x="${GW}" y="-16" font-size="8" fill="${th.dim}" text-anchor="end" letter-spacing="1">${xml(subtitle)}</text>
-  ${els.join("\n")}`;
-
-  return svgShell({
-    width,
-    height: Math.round(width * (vbH / vbW)),
-    viewBox: `-10 -36 ${vbW} ${vbH}`,
+  return defenseShell({
+    doc, theme: th, cols: grid.length, title, width,
+    subtitle: `LVL ${level} ${cfg.name} · ${towers.length} TOWERS · ${kills}/${enemies.length} DOWN`,
     ariaLabel: `Tower defense over a GitHub contribution graph: towers on big commit days shoot lasers at ${enemies.length} bug creeps marching along the weekday rows; ${kills} destroyed, ${enemies.length - kills} slip through`,
-    extraStyle: `*{transform-box:fill-box}.td-t{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700}@media (prefers-reduced-motion:reduce){*{animation-play-state:paused!important}}${css.join("")}`,
-    body,
   });
 }

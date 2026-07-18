@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>github-blocks — your commit graph fights back</title>
-<meta name="description" content="Configure an animated tower-defense battle over your GitHub contribution graph and ship it to your profile README. No JavaScript in the SVG — pure baked CSS keyframes.">
+<meta name="description" content="Configure a tower-defense animation over your GitHub contribution graph and ship it to your profile README. One SVG, no scripts, updated daily by a workflow you own.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='3' fill='%230a0e0b'/><rect x='2.5' y='2.5' width='4' height='4' rx='1' fill='%2339d353'/><rect x='9.5' y='2.5' width='4' height='4' rx='1' fill='%23006d32'/><rect x='2.5' y='9.5' width='4' height='4' rx='1' fill='%230e4429'/><rect x='9.5' y='9.5' width='4' height='4' rx='1' fill='%23a371f7'/></svg>">
 <link rel="stylesheet" href="./style.css">
 </head>
@@ -13,16 +13,42 @@
 
   <header class="top">
     <div class="wordmark"><span class="tick">▚</span> GITHUB-BLOCKS</div>
-    <a class="repolink" href="https://github.com/okturan/github-blocks">github.com/okturan/github-blocks →</a>
+    <nav class="topnav">
+      <a href="#pick">CONFIGURE</a>
+      <a href="#library">LIBRARY</a>
+      <a href="#how">HOW IT WORKS</a>
+      <a href="https://github.com/okturan/github-blocks">GITHUB →</a>
+    </nav>
   </header>
 
   <section class="hero">
-    <div class="eyebrow">Lane Defense · configurator</div>
     <h1>YOUR COMMIT GRAPH<br>FIGHTS <span class="alt">BACK</span></h1>
-    <p class="lede">Big commit days become <strong>towers</strong>. Bug waves march down the weekday lanes. The whole battle is simulated from your real contribution grid and baked into a <strong>single SVG with zero JavaScript</strong> — it animates anywhere an <code class="mono">&lt;img&gt;</code> renders, including your GitHub profile README. Tune it below, then ship it.</p>
+    <p class="lede">Three tower-defense animations that run on your real contribution data. The generator simulates a full battle — towers on your big commit days, enemies with hit points and speeds — and bakes the outcome into an SVG of roughly 150&nbsp;KB with no scripts in it. GitHub renders it in a README like any other image.</p>
+  </section>
+
+  <section id="pick">
+    <h2><span class="n">01</span>PICK A BLOCK</h2>
+    <div class="modules" role="group" aria-label="Defense blocks" id="modules">
+      <button class="module" data-block="lane-defense" aria-pressed="true">
+        <span class="mname">LANE DEFENSE</span>
+        <span class="mdesc">Bug waves march across the weekday rows. Days you shipped a lot shoot back.</span>
+      </button>
+      <button class="module" data-block="night-shift" aria-pressed="false">
+        <span class="mname">NIGHT SHIFT</span>
+        <span class="mdesc">Creeps follow a road carved through the graph. Towers lead their shots by 0.22 seconds.</span>
+      </button>
+      <button class="module" data-block="boss-fight" aria-pressed="false">
+        <span class="mname">BOSS FIGHT</span>
+        <span class="mdesc">The snake from the classic snk animation returns as a boss and starts eating your commits.</span>
+      </button>
+    </div>
+  </section>
+
+  <section id="configure">
+    <h2><span class="n">02</span>CONFIGURE</h2>
 
     <div class="rig">
-      <div class="frame"><img id="preview" alt="Live preview: tower defense battle animated over the configured contribution graph"></div>
+      <div class="frame"><img id="preview" alt="Live preview of the configured battle"></div>
       <div class="statline" id="stats" aria-live="polite"></div>
 
       <div class="controls">
@@ -61,48 +87,46 @@
             <button data-theme="dark" aria-pressed="true">DARK</button>
             <button data-theme="light" aria-pressed="false">LIGHT</button>
           </div>
-          <p class="hint">The workflow ships both; your README swaps them with <code>&lt;picture&gt;</code>.</p>
+          <p class="hint">The workflow generates both. Your README swaps them with <code>&lt;picture&gt;</code>.</p>
         </div>
 
         <div class="control">
           <label for="title">Header title</label>
           <input type="text" id="title" value="COMMIT DEFENSE" maxlength="40" spellcheck="false">
-          <p class="hint">Battle stats are appended automatically.</p>
+          <p class="hint">Battle stats get appended after the title.</p>
         </div>
       </div>
     </div>
   </section>
 
   <section id="ship">
-    <h2><span class="n">▸</span>SHIP IT TO YOUR README</h2>
-    <p class="sectionlede">A committed SVG can't randomize per page load — GitHub's image proxy serves cached bytes and scripts never run inside a README. So the workflow below regenerates the battle on a daily schedule instead: with the settings above it bakes a fresh SVG from your live graph and force-pushes it to an <code class="mono">output</code> branch in your profile repo.</p>
+    <h2><span class="n">03</span>SHIP IT</h2>
+    <p class="sectionlede">GitHub's image proxy caches README images and never runs scripts inside them, so the SVG can't reroll itself per visitor. The workflow re-simulates from your live graph on a daily cron and pushes the result to an <code class="mono">output</code> branch in your profile repo. Different day, different battle.</p>
 
-    <div class="step">
-      <h3><span class="n">01</span>Add the workflow</h3>
-      <p>In your profile repo (the one named after your username), create <code id="wfpath">.github/workflows/lane-defense.yml</code> with exactly this — it's already personalized from your settings above:</p>
+    <div class="tabbar" role="tablist" aria-label="Output format">
+      <button role="tab" id="tab-workflow" aria-selected="true" aria-controls="panel-workflow">WORKFLOW</button>
+      <button role="tab" id="tab-embed" aria-selected="false" aria-controls="panel-embed">EMBED</button>
+      <button role="tab" id="tab-download" aria-selected="false" aria-controls="panel-download">DOWNLOAD</button>
+    </div>
+
+    <div class="tabpanel" role="tabpanel" id="panel-workflow" aria-labelledby="tab-workflow">
+      <p>Create this file in your profile repo — the one named after your username — at <code id="wfpath">.github/workflows/lane-defense.yml</code>. It carries the settings you picked above and pins the renderer to the current commit. Push it, then run it once from the Actions tab; that first run creates the <code>output</code> branch, and the schedule takes over from there.</p>
       <div class="codeblock">
         <pre id="yaml"></pre>
         <button class="copy" data-copy="yaml">COPY</button>
       </div>
     </div>
 
-    <div class="step">
-      <h3><span class="n">02</span>Run it once</h3>
-      <p>Push the file, open your repo's <b>Actions</b> tab, pick <b>Lane defense</b>, and hit <b>Run workflow</b>. It creates the <code>output</code> branch with your first battle; after that the daily schedule takes over.</p>
-    </div>
-
-    <div class="step">
-      <h3><span class="n">03</span>Embed it</h3>
-      <p>Paste this into your profile <code>README.md</code> — dark and light themes swap automatically:</p>
+    <div class="tabpanel" role="tabpanel" id="panel-embed" aria-labelledby="tab-embed" hidden>
+      <p>Paste this into your profile <code>README.md</code> once the workflow has run. Dark and light swap automatically. Raw URLs sit behind a cache of about five minutes, so a fresh battle takes a moment to show up.</p>
       <div class="codeblock">
         <pre id="embed"></pre>
         <button class="copy" data-copy="embed">COPY</button>
       </div>
     </div>
 
-    <div class="step">
-      <h3><span class="n">OR</span>Just take the file</h3>
-      <p>No workflow, no updates — download the exact battle you configured above and commit it anywhere:</p>
+    <div class="tabpanel" role="tabpanel" id="panel-download" aria-labelledby="tab-download" hidden>
+      <p>The exact battle configured above, as files. Commit them anywhere an image works. They won't update — some people prefer that.</p>
       <div class="btnrow">
         <button id="dl-dark">DOWNLOAD DARK SVG</button>
         <button id="dl-light">DOWNLOAD LIGHT SVG</button>
@@ -110,9 +134,9 @@
     </div>
   </section>
 
-  <section id="blocks">
+  <section id="library">
     <h2><span class="n">▸</span>THE REST OF THE LIBRARY</h2>
-    <p class="sectionlede">Lane Defense is one block of several. Each is a pure function — data in, self-contained SVG out — that runs identically in your browser (these previews), in GitHub Actions, and in Node. Sample data shown; see the <a href="https://github.com/okturan/github-blocks#usage">repo usage docs</a> to feed them your own.</p>
+    <p class="sectionlede">Four more blocks render media cards — covers, scores, genre chips — from a list of items you pass in. The previews here use sample data, because cover art has to be fetched and inlined at generation time. Usage is in the <a href="https://github.com/okturan/github-blocks#usage">repo README</a>.</p>
     <div class="gallery" id="gallery"></div>
   </section>
 
@@ -121,25 +145,25 @@
     <div class="facts">
       <div class="fact">
         <h3>Simulated, then baked</h3>
-        <p>The tower-defense sim runs to completion at generation time. Every laser, kill, and leak becomes a CSS keyframe — the SVG that ships contains no logic, just choreography.</p>
+        <p>The sim runs once, at generation time. Every laser flash and every death becomes a CSS keyframe. The SVG that ships contains no code, only choreography.</p>
       </div>
       <div class="fact">
-        <h3>Deterministic by design</h3>
-        <p>Same grid + level + seed → the identical battle, every render, both themes. That's what makes daily rotation honest: the cron changes the seed, not dice at view time.</p>
+        <h3>Deterministic</h3>
+        <p>Same grid, same level, same seed: the identical battle, in both themes. Rotation comes from the cron changing the seed each day, not from dice at view time.</p>
       </div>
       <div class="fact">
-        <h3>Balanced for any profile</h3>
-        <p>Level-3+ commit days garrison the graph. Sparse profiles promote level-2 days, dense ones get thinned, and enemy HP scales with tower count — PATROL sweeps, SIEGE leaks a few, OVERRUN ends badly.</p>
+        <h3>Balanced to your graph</h3>
+        <p>Days at contribution level 3 or 4 become towers. A sparse graph promotes level-2 days until there are at least eight; a dense one gets thinned to thirty, and enemy HP scales with the tower count. Level 1 is winnable everywhere. Level 3 is not.</p>
       </div>
       <div class="fact">
         <h3>Nothing to host</h3>
-        <p>The workflow runs in your repo on GitHub's runners and commits the SVG to your own output branch. This page is static files on GitHub Pages; live previews fetch grids from the community <a href="https://github.com/grubersjoe/github-contributions-api">github-contributions-api</a>.</p>
+        <p>The workflow runs on GitHub's runners and commits to your own repo. This page is static files on GitHub Pages. Live previews come from <a href="https://github.com/grubersjoe/github-contributions-api">grubersjoe's contributions API</a>; when it's unreachable, previews fall back to a sample grid.</p>
       </div>
     </div>
   </section>
 
   <footer>
-    BUILT BY <a href="https://github.com/okturan">OKTURAN</a> · MODULES &amp; DOCS AT <a href="https://github.com/okturan/github-blocks">GITHUB-BLOCKS</a> · SVGS PAUSE UNDER REDUCED-MOTION
+    BUILT BY <a href="https://github.com/okturan">OKTURAN</a> · SOURCE AT <a href="https://github.com/okturan/github-blocks">GITHUB-BLOCKS</a> · SVGS PAUSE UNDER REDUCED MOTION
   </footer>
 
 </div>

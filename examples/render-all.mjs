@@ -8,6 +8,8 @@ import { posterCards } from "../blocks/poster-cards.mjs";
 import { mediaList } from "../blocks/media-list.mjs";
 import { classicCards } from "../blocks/classic-cards.mjs";
 import { laneDefense } from "../blocks/lane-defense.mjs";
+import { nightShift } from "../blocks/night-shift.mjs";
+import { bossFight } from "../blocks/boss-fight.mjs";
 import { sampleContributionGrid } from "../lib/contrib.mjs";
 
 const items = [
@@ -27,6 +29,8 @@ const blocks = {
   "classic-cards": classicCards(items),
   "lane-defense": laneDefense(grid, { level: 2, seed: 7 }),
   "lane-defense-light": laneDefense(grid, { level: 1, seed: 11, theme: "light" }),
+  "night-shift": nightShift(grid, { level: 2, seed: 7 }),
+  "boss-fight": bossFight(grid, { level: 2, seed: 7 }),
 };
 
 for (const [name, svg] of Object.entries(blocks)) {

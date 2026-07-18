@@ -21,6 +21,8 @@ more blocks will land here as they get built.
 | `media-list` | 896×340 | One panel, numbered rows; meta and score right-aligned. |
 | `classic-cards` | 860×220 | The original okturan layout: dark panel, small cover, title + meta. |
 | `lane-defense` | 896×169 | Animated tower defense over your contribution graph: big commit days are towers, bug waves march the weekday lanes. Pre-simulated, baked to CSS keyframes — no JS. |
+| `night-shift` | 896×169 | Creeps follow a serpentine road through the graph; towers near the road fire plasma bolts with real intercept leads. |
+| `boss-fight` | 896×169 | The snk snake returns as a boss and eats commit cells while every level-2+ day fires on it. Three endings: ROUT, LAST STAND, CONSUMED (the snake wins). |
 
 All 896-wide blocks fill GitHub's desktop README column (max ~896px) and scale
 down proportionally on narrower screens.
@@ -77,18 +79,19 @@ Render every block with sample data:
 node examples/render-all.mjs   # writes examples/out/*.svg
 ```
 
-### Use lane-defense without writing code
+### Use the defense blocks without writing code
 
 The [configurator](https://okturan.github.io/github-blocks/) generates a
 workflow that checks out this repo at a pinned commit and runs
-`action/generate-lane-defense.mjs` on GitHub's runners — no vendoring, no
-hosting. Config is all env vars: `PROFILE_USER`, `LD_LEVEL` (1–3 or `rotate`),
+`action/generate.mjs` on GitHub's runners — no vendoring, no hosting. Config
+is all env vars: `BLOCK` (`lane-defense` / `night-shift` / `boss-fight`),
+`PROFILE_USER`, `LD_LEVEL` (1–3 or `rotate`; boss-fight reads them as endings),
 `LD_SEED` (int or `daily`), `LD_THEMES`, `LD_TITLE`, `LD_OUT`.
 
 ## Repo layout
 
 - `blocks/` — the renderers (pure ESM, no dependencies; run in Node and browsers)
-- `lib/` — shared helpers + contribution-grid fetching/parsing
+- `lib/` — shared helpers, the defense-sim engine, contribution-grid fetching/parsing
 - `action/` — CI entry points for consumers' workflows
 - `site/` — the configurator, deployed to GitHub Pages by `.github/workflows/pages.yml`
 - `examples/` — `node examples/render-all.mjs` renders every block with sample data
