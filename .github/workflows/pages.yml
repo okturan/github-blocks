@@ -32,6 +32,13 @@ jobs:
           mkdir -p _site
           cp -R site/* _site/
           cp -R blocks lib action _site/
+          # Version every local module/asset reference with the commit SHA so a
+          # cached index.html can never load a mismatched app.mjs (Pages caches
+          # for 10 minutes; an old/new mix breaks the page).
+          V="${GITHUB_SHA::8}"
+          find _site \( -name '*.mjs' -o -name '*.html' \) -print0 | xargs -0 sed -i \
+            -e "s/\.mjs\"/.mjs?v=$V\"/g" \
+            -e "s/\.css\"/.css?v=$V\"/g"
 
       - name: Configure Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0

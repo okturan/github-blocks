@@ -145,9 +145,6 @@ function render() {
 
 function syncBlockUI() {
   const r = reg();
-  for (const b of $("modules").querySelectorAll(".module")) {
-    b.setAttribute("aria-pressed", b.dataset.block === state.block);
-  }
   const segButtons = $("levelseg").querySelectorAll("button[data-level]");
   segButtons.forEach((b) => {
     if (b.dataset.level !== "rotate") b.textContent = `${b.dataset.level} ${r.levelNames[+b.dataset.level - 1]}`;
@@ -341,9 +338,12 @@ function renderMedia() {
     ].filter(Boolean);
     return `  {\n    ${fields.join(",\n    ")},\n  },`;
   }).join("\n");
+  // ".mjs" is split so the deploy-time cache-busting sed (which versions every
+  // local module reference) leaves this user-facing snippet alone.
+  const EXT = ".m" + "js";
   $("media-code").textContent = `// node >= 18, from a checkout of okturan/github-blocks
 import { writeFileSync } from "node:fs";
-import { ${layout.importName} } from "./blocks/${media.layout}.mjs";
+import { ${layout.importName} } from "./blocks/${media.layout}${EXT}";
 
 const toDataUri = async (url) => {
   const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
@@ -417,14 +417,6 @@ $("anime-q").addEventListener("input", () => {
 $("anime-q").addEventListener("keydown", (e) => { if (e.key === "Escape") closeResults(); });
 document.addEventListener("click", (e) => { if (!e.target.closest(".search-wrap")) closeResults(); });
 
-$("layoutseg").addEventListener("click", (e) => {
-  const btn = e.target.closest("button[data-layout]");
-  if (!btn) return;
-  media.layout = btn.dataset.layout;
-  for (const b of $("layoutseg").querySelectorAll("button")) b.setAttribute("aria-pressed", b === btn);
-  renderMedia();
-});
-
 // Start with the shelf from okturan/okturan so the section isn't empty.
 async function bootMedia() {
   renderMedia();
@@ -441,12 +433,26 @@ async function bootMedia() {
 
 // ---------------------------------------------------------------------- wiring
 
-$("modules").addEventListener("click", (e) => {
-  const btn = e.target.closest(".module[data-block]");
-  if (!btn || btn.dataset.block === state.block) return;
-  state.block = btn.dataset.block;
-  syncBlockUI();
-  render();
+// Side panel: one list for every block; defense and media views swap on the stage.
+function selectBlock(kind, id) {
+  for (const b of $("side").querySelectorAll(".sideitem")) {
+    b.setAttribute("aria-pressed", b.dataset.id === id);
+  }
+  $("view-defense").hidden = kind !== "defense";
+  $("view-media").hidden = kind !== "media";
+  if (kind === "defense") {
+    state.block = id;
+    syncBlockUI();
+    render();
+  } else {
+    media.layout = id;
+    renderMedia();
+  }
+}
+$("side").addEventListener("click", (e) => {
+  const btn = e.target.closest(".sideitem[data-id]");
+  if (!btn) return;
+  selectBlock(btn.dataset.kind, btn.dataset.id);
 });
 
 $("load").addEventListener("click", () => {
@@ -526,8 +532,11 @@ $("dl-light").addEventListener("click", () => download("light"));
 
 // ----------------------------------------------------------------------- boot
 
+// Deep link: #night-shift, #cinematic-cards etc. select that block on load.
+const hashItem = document.querySelector(`.sideitem[data-id="${CSS.escape(location.hash.slice(1))}"]`);
 syncBlockUI();
 render();
 bootMedia();
 pinRendererSha();
 loadGrid("okturan");
+if (hashItem) selectBlock(hashItem.dataset.kind, hashItem.dataset.id);

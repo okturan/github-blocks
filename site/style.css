@@ -26,6 +26,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
@@ -83,40 +84,73 @@ header.top {
 }
 .topnav a:hover { color: var(--accent); text-decoration: none; }
 
-/* ---- block picker ---- */
-.modules {
+/* ---- app shell: sidebar + stage ---- */
+.app {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 14px;
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: 36px;
+  align-items: start;
 }
-.module {
+.side {
+  position: sticky;
+  top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sgroup {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  color: var(--dim);
+  margin: 14px 0 4px;
+}
+.sgroup:first-child { margin-top: 0; }
+.sideitem {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: 3px;
   text-align: left;
-  padding: 16px;
-  border-radius: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
   white-space: normal;
   letter-spacing: normal;
+  border-color: transparent;
+  background: none;
 }
-.module .mname {
-  font-size: 13px;
+.sideitem b {
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
 }
-.module .mdesc {
+.sideitem span {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-weight: 400;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.4;
   color: var(--dim);
 }
-.module[aria-pressed="true"] {
+.sideitem:hover { background: var(--panel); border-color: var(--line); }
+.sideitem[aria-pressed="true"] {
+  background: var(--panel);
   border-color: var(--accent);
-  box-shadow: inset 0 0 0 1px var(--accent);
 }
-.module[aria-pressed="true"] .mname { color: var(--accent); }
+.sideitem[aria-pressed="true"] b { color: var(--accent); }
+.stage { display: flex; flex-direction: column; gap: 64px; min-width: 0; }
+#view-defense, #view-media { display: flex; flex-direction: column; gap: 64px; }
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; gap: 28px; }
+  .side {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .sgroup { width: 100%; margin: 8px 0 0; }
+  .sideitem span { display: none; }
+  .sideitem { border-color: var(--line); }
+}
 
 /* ---- output tabs ---- */
 .tabbar {
@@ -141,7 +175,6 @@ header.top {
   top: 1px;
 }
 .tabpanel { display: flex; flex-direction: column; gap: 12px; }
-.tabpanel[hidden] { display: none; }
 .tabpanel > p { margin: 0; max-width: 68ch; color: var(--dim); font-size: 14.5px; }
 .tabpanel > p code {
   background: var(--panel);
