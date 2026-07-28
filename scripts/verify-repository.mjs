@@ -15,18 +15,22 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-assert(outputNames.length === 8, `Expected eight rendered examples, found ${outputNames.length}`);
+assert(outputNames.length === 9, `Expected nine rendered examples, found ${outputNames.length}`);
 
 for (const name of outputNames) {
   const svg = await readFile(join(outputDirectory, name), "utf8");
   assert(/^(?:<\?xml[^>]*>\s*)?<svg\b/.test(svg), `${name} is not an SVG document`);
   assert(/\bwidth="\d+"/.test(svg) && /\bheight="\d+"/.test(svg), `${name} is missing intrinsic dimensions`);
   assert(!/<script\b|javascript:/i.test(svg), `${name} contains executable script content`);
+  if (["cinematic-strip.svg", "poster-cards.svg", "media-list.svg", "classic-cards.svg"].includes(name)) {
+    const inlinedCovers = svg.match(/<image href="data:image\/jpeg;base64,/g) ?? [];
+    assert(inlinedCovers.length === 3, `${name} must contain three inlined sample covers`);
+  }
 }
 
 const galleryOutputs = [...readme.matchAll(/src="\.\/examples\/out\/([^"/]+\.svg)"/g)]
   .map((match) => match[1]);
-assert(galleryOutputs.length === 4, `Expected four README gallery outputs, found ${galleryOutputs.length}`);
+assert(galleryOutputs.length === 5, `Expected five README gallery outputs, found ${galleryOutputs.length}`);
 assert(new Set(galleryOutputs).size === galleryOutputs.length, "README gallery outputs must be unique");
 for (const name of galleryOutputs) {
   assert(outputNames.includes(name), `README gallery references missing output: ${name}`);
