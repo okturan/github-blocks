@@ -4,11 +4,13 @@ import test from "node:test";
 import { bossFight } from "../blocks/boss-fight.mjs";
 import { cinematicStrip } from "../blocks/cinematic-strip.mjs";
 import { classicCards } from "../blocks/classic-cards.mjs";
+import { codingHabits } from "../blocks/coding-habits.mjs";
 import { laneDefense } from "../blocks/lane-defense.mjs";
 import { mediaList } from "../blocks/media-list.mjs";
 import { nightShift } from "../blocks/night-shift.mjs";
 import { posterCards } from "../blocks/poster-cards.mjs";
 import { sampleContributionGrid } from "../lib/contrib.mjs";
+import { analyzeCodingHabits } from "../lib/habits.mjs";
 import { safeHref, safeId, xml } from "../lib/helpers.mjs";
 
 const items = [
@@ -39,6 +41,35 @@ test("media renderers preserve their documented dimensions and item links", () =
     assert.equal((svg.match(/<a href="https:\/\/myanimelist\.net\//g) ?? []).length, 3);
     for (const item of items) assert.match(svg, new RegExp(item.title.replaceAll(" ", "\\s")));
   }
+});
+
+test("coding habits renders deterministic dark and light summaries", () => {
+  const commits = [
+    { date: "2026-07-25T15:05:00+03:00" },
+    { date: "2026-07-25T16:05:00+03:00" },
+    { date: "2026-07-26T09:05:00+03:00" },
+  ];
+  const summary = analyzeCodingHabits(commits, { timeZone: "Europe/Istanbul" });
+  assert.equal(summary.mostActiveDay, "Saturday");
+  assert.equal(summary.commonWindow, "15:00–17:59");
+  assert.equal(summary.activeDates, 2);
+  assert.equal(summary.medianPerActiveDate, 1.5);
+
+  const dark = codingHabits(summary);
+  assert.equal(dark, codingHabits(summary));
+  assert.match(dark, /width="896"[^>]+height="300"/);
+  assert.match(dark, /Saturday/);
+  assert.match(codingHabits(summary, { theme: "light" }), /fill="#ffffff"/);
+});
+
+test("coding habits analysis validates time zones and ignores invalid dates", () => {
+  const summary = analyzeCodingHabits([{ date: "not-a-date" }], { timeZone: "UTC" });
+  assert.equal(summary.sampleSize, 0);
+  assert.equal(summary.dateRange, "No indexed commits");
+  assert.throws(
+    () => analyzeCodingHabits([], { timeZone: "Definitely/Not_A_Timezone" }),
+    RangeError,
+  );
 });
 
 test("media renderers neutralize link, cover, id, and text injection", () => {

@@ -12,7 +12,7 @@ previews with the exact modules in this repo; nothing is hosted server-side.
 Started with the anime section of [okturan/okturan](https://github.com/okturan/okturan);
 more blocks will land here as they get built.
 
-## See them move
+## See them render
 
 These are committed outputs from the actual renderers, not mockups. Click any
 battle to open the configurator and generate the same kind of block for your
@@ -30,6 +30,9 @@ own contribution graph.
 <p>
   <a href="./examples/out/cinematic-strip.svg"><img width="896" alt="Cinematic Strip rendering three media covers as a wide profile card" src="./examples/out/cinematic-strip.svg"></a>
 </p>
+<p>
+  <a href="./examples/out/coding-habits.svg"><img width="896" alt="Coding Habits summarizing a recent public commit sample by day and time" src="./examples/out/coding-habits.svg"></a>
+</p>
 
 ## Blocks
 
@@ -39,6 +42,7 @@ own contribution graph.
 | `poster-cards` | 896×446 | Full-bleed posters with title, meta + score, genre chips. |
 | `media-list` | 896×340 | One panel, numbered rows; meta and score right-aligned. |
 | `classic-cards` | 878×220 | The original okturan layout: dark panel, small cover, title + meta. |
+| `coding-habits` | 896×300 | Scheduled analysis of the latest X indexed public, default-branch, non-merge commits. No LLM required. |
 | `lane-defense` | 896×169 | Animated tower defense over your contribution graph: big commit days are towers, bug waves march the weekday lanes. Pre-simulated, baked to CSS keyframes — no JS. |
 | `night-shift` | 896×169 | Creeps follow a serpentine road through the graph; towers near the road fire plasma bolts with real intercept leads. |
 | `boss-fight` | 896×169 | The snk snake returns as a boss and eats commit cells while every level-2+ day fires on it. Three endings: ROUT, LAST STAND, CONSUMED (the snake wins). |
@@ -66,6 +70,75 @@ const svg = cinematicStrip([
 ]);
 writeFileSync("dist/profile-anime.svg", svg);
 ```
+
+The committed gallery examples load three small local JPEGs and inline them as
+data URIs. This is why the covers survive GitHub's image proxy instead of
+falling back to colored initials.
+
+### Generate coding habits on a schedule
+
+The coding-habits block is “agentic” in the practical sense: a scheduled action
+checks a configurable number of recent commits, recomputes the evidence, and
+publishes a fresh SVG. Its day, time-window, active-date, median, and weekday
+chart calculations are deterministic, so the free path needs no LLM, API key,
+or inference service.
+
+```yaml
+name: Update coding habits
+
+on:
+  schedule:
+    - cron: "23 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout the renderer
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: okturan/github-blocks
+          ref: main # pin this to a commit SHA for reproducible consumers
+
+      - name: Analyze recent public commits
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PROFILE_USER: "okturan"
+          HABITS_LIMIT: "500" # 1–1000
+          HABITS_TIMEZONE: "Europe/Istanbul"
+        run: node action/generate-coding-habits.mjs
+
+      - name: Publish to the profile repository's output branch
+        run: |
+          cd dist
+          git init -b output
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Update coding habits"
+          git push --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" output
+```
+
+Embed the two generated themes from the `output` branch:
+
+```html
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/USER/USER/output/coding-habits.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/USER/USER/output/coding-habits-light.svg">
+  <img alt="My recent public coding habits" src="https://raw.githubusercontent.com/USER/USER/output/coding-habits.svg">
+</picture>
+```
+
+The generator uses GitHub's indexed commit search for `author:USER
+merge:false is:public`, filters merges defensively, and caps the sample at GitHub
+Search's first 1,000 results. `HABITS_WINDOW` changes the time bucket
+(default `3` hours), while `HABITS_TITLE`, `HABITS_THEMES`, and `HABITS_OUT`
+control presentation and output.
 
 `lane-defense` takes a contribution grid instead of items:
 
@@ -99,9 +172,9 @@ node examples/render-all.mjs   # writes examples/out/*.svg
 ```
 
 The verification workflow runs dependency-free Node behavior tests for GitHub
-contribution parsing, XML and active-link safety, media-layout contracts,
-deterministic defense outcomes, and reduced-motion output. It then rerenders
-all eight examples and fails if the committed SVGs drift, if the README gallery
+contribution and recent-commit parsing, time-zone-aware habits analysis, XML
+and active-link safety, media-layout contracts, deterministic defense outcomes,
+and reduced-motion output. It then rerenders all nine examples and fails if the committed SVGs drift, if the README gallery
 points at missing output, or if an output introduces executable script content.
 
 ### Use the defense blocks without writing code
