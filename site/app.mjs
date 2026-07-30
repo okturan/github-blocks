@@ -8,6 +8,9 @@ import { cinematicStrip } from "./blocks/cinematic-strip.mjs";
 import { posterCards } from "./blocks/poster-cards.mjs";
 import { mediaList } from "./blocks/media-list.mjs";
 import { classicCards } from "./blocks/classic-cards.mjs";
+import { codingHabits } from "./blocks/coding-habits.mjs";
+import { analyzeCodingHabits } from "./lib/habits.mjs";
+import { fetchRecentPublicCommits } from "./lib/github-commits.mjs";
 
 const $ = (id) => document.getElementById(id);
 const DAY = Math.floor(Date.now() / 86_400_000);
@@ -23,7 +26,7 @@ const REGISTRY = {
     fixedHint: (name) => `Fixed at ${name} on every regeneration.`,
     alt: "Tower defense preview: bug waves march the weekday rows while towers on big commit days fire lasers",
     howName: "How Lane Defense plays",
-    how: "Bugs spawn in bursts and march the weekday rows at different speeds — red ones are weak, orange tougher, purple are tanks. Any tower within range lases the front-runner on a fixed cooldown. Whatever the towers miss walks off the right edge as a leak.",
+    how: "Bugs spawn in bursts and march along the weekday rows at different speeds. Red bugs are weak, orange bugs are tougher, and purple bugs are tanks. Each tower fires at the nearest target in range. Anything the towers miss leaves the graph as a leak.",
   },
   "night-shift": {
     fn: nightShift,
@@ -35,7 +38,7 @@ const REGISTRY = {
     fixedHint: (name) => `Fixed at ${name} on every regeneration.`,
     alt: "Tower defense preview: creeps follow a winding road through the graph while towers fire plasma bolts",
     howName: "How Night Shift plays",
-    how: "Creeps run the road — Monday row out, Wednesday back, Friday out — in tight waves, so the front-runner soaks fire while the pack advances. Only towers near the road take part, and they lead every shot by 0.22 seconds: bolts land where the creep will be, not where it was.",
+    how: "Creeps follow a road across Monday, back through Wednesday, and out through Friday. The first creep absorbs fire while the pack advances. Towers near the road aim 0.22 seconds ahead, so each bolt lands where its target will be.",
   },
   "boss-fight": {
     fn: bossFight,
@@ -47,7 +50,7 @@ const REGISTRY = {
     fixedHint: (name) => name === "CONSUMED" ? "The towers lose. The graph gets eaten, every run." : `The snake goes down at ${name === "ROUT" ? "about half" : "86%"} of its run, every time.`,
     alt: "Boss fight preview: a snake eats commit cells while every fortified day fires lasers at it",
     howName: "How Boss Fight plays",
-    how: "The snake serpentines through the graph at constant speed, eating unfortified cells as its head passes; level-2+ days hold and fire on the head about once a second when it's in range. The ending sets its HP: on ROUT it dies at about half its run, on LAST STAND at 86%, and on CONSUMED the towers can't land enough hits — the graph gets eaten.",
+    how: "The snake moves through the graph at a constant speed and eats unfortified cells. Days at level 2 or higher hold their ground and fire when the head is in range. The selected ending sets the boss health. ROUT ends near the halfway point, LAST STAND reaches 86 percent, and CONSUMED lets the snake eat the graph.",
   },
 };
 
@@ -69,7 +72,7 @@ const state = {
 // ---------------------------------------------------------------- grid loading
 
 function toGrid(contributions) {
-  // One entry per day, Sunday-aligned, oldest first — the same layout as
+  // One entry per day, Sunday-aligned, oldest first. This matches
   // github.com's own graph. Chunk into weeks × 7 and pad the tail.
   const weeks = [];
   for (let i = 0; i < contributions.length; i += 7) {
@@ -92,7 +95,7 @@ async function loadGrid(user) {
     state.grid = toGrid(data.contributions);
     state.gridIsLive = true;
     state.user = user;
-    note.textContent = `Live graph loaded — ${data.total?.lastYear ?? "?"} contributions in the last year.`;
+    note.textContent = `Live graph loaded. ${data.total?.lastYear ?? "?"} contributions in the last year.`;
   } catch (err) {
     state.gridIsLive = false;
     note.classList.add("error");
@@ -172,7 +175,7 @@ function renderSnippets() {
 
 on:
   schedule:
-    - cron: "15 0 * * *" # daily — rotates the battle
+    - cron: "15 0 * * *" # daily; rotates the battle
   workflow_dispatch:
 
 permissions:
@@ -223,7 +226,11 @@ async function pinRendererSha() {
     });
     if (!res.ok) return;
     const sha = (await res.json()).sha;
-    if (/^[a-f0-9]{40}$/.test(sha)) { state.renderSha = sha; renderSnippets(); }
+    if (/^[a-f0-9]{40}$/.test(sha)) {
+      state.renderSha = sha;
+      renderSnippets();
+      renderHabitsSnippets();
+    }
   } catch { /* keep "main" */ }
 }
 
@@ -233,6 +240,162 @@ function download(theme) {
   a.download = theme === "dark" ? `${state.block}.svg` : `${state.block}-light.svg`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+// -------------------------------------------------------------- coding habits
+
+function sampleCommits() {
+  const now = new Date();
+  return Array.from({ length: 120 }, (_, index) => {
+    const date = new Date(now);
+    date.setUTCDate(date.getUTCDate() - (index % 42));
+    date.setUTCHours(8 + ((index * 7) % 12), (index * 13) % 60, 0, 0);
+    return { date: date.toISOString() };
+  });
+}
+
+const habits = {
+  user: "okturan",
+  limit: 500,
+  timeZone: "UTC",
+  windowHours: 3,
+  theme: "dark",
+  title: "RECENT PUBLIC CODING HABITS",
+  commits: sampleCommits(),
+  live: false,
+};
+const renderedHabits = { dark: "", light: "" };
+let habitsPreviewUrl = null;
+
+function renderHabitsSnippets() {
+  if (!$("habits-yaml")) return;
+  $("habits-yaml").textContent = `name: Update coding habits
+
+on:
+  schedule:
+    - cron: "23 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout the renderer
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: okturan/github-blocks
+          ref: ${state.renderSha}
+          path: renderer
+
+      - name: Generate the report
+        env:
+          GITHUB_TOKEN: \${{ github.token }}
+          PROFILE_USER: ${yamlQuote(habits.user)}
+          HABITS_LIMIT: ${yamlQuote(habits.limit)}
+          HABITS_TIMEZONE: ${yamlQuote(habits.timeZone)}
+          HABITS_WINDOW: ${yamlQuote(habits.windowHours)}
+          HABITS_TITLE: ${yamlQuote(habits.title || "RECENT PUBLIC CODING HABITS")}
+          HABITS_OUT: \${{ github.workspace }}/generated
+        run: node renderer/action/generate-coding-habits.mjs
+
+      - name: Publish generated files
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          mkdir output
+          cd output
+          git init
+          git remote add origin "https://x-access-token:\${GH_TOKEN}@github.com/\${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads origin output >/dev/null 2>&1; then
+            git fetch --depth=1 origin output
+            git checkout -b output FETCH_HEAD
+          else
+            git checkout -b output
+          fi
+          cp ../generated/coding-habits*.svg .
+          git add coding-habits.svg coding-habits-light.svg
+          git diff --cached --quiet && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update coding habits"
+          git push origin output`;
+
+  const raw = (file) => `https://raw.githubusercontent.com/${habits.user}/${habits.user}/output/${file}`;
+  $("habits-embed").textContent = `<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="${raw("coding-habits.svg")}">
+  <source media="(prefers-color-scheme: light)" srcset="${raw("coding-habits-light.svg")}">
+  <img alt="My recent public coding habits" src="${raw("coding-habits.svg")}">
+</picture>`;
+}
+
+function renderHabits() {
+  let summary;
+  const note = $("habits-note");
+  note.classList.remove("error");
+  try {
+    summary = analyzeCodingHabits(habits.commits, {
+      timeZone: habits.timeZone,
+      windowHours: habits.windowHours,
+    });
+  } catch (error) {
+    note.classList.add("error");
+    note.textContent = `Cannot render this timezone (${error.message}).`;
+    return;
+  }
+
+  for (const theme of ["dark", "light"]) {
+    renderedHabits[theme] = codingHabits(summary, {
+      theme,
+      title: habits.title || "RECENT PUBLIC CODING HABITS",
+    });
+  }
+  if (habitsPreviewUrl) URL.revokeObjectURL(habitsPreviewUrl);
+  habitsPreviewUrl = URL.createObjectURL(new Blob([renderedHabits[habits.theme]], { type: "image/svg+xml" }));
+  $("habits-preview").src = habitsPreviewUrl;
+  $("habits-stats").innerHTML = `
+    <span>SOURCE <b>${habits.live ? `@${habits.user}` : "SAMPLE DATES"}</b></span>
+    <span>COMMITS <b>${summary.sampleSize}</b></span>
+    <span>ACTIVE DATES <b>${summary.activeDates}</b></span>
+    <span>BUSIEST DAY <b>${summary.mostActiveDay.toUpperCase()}</b></span>
+    <span>WINDOW <b>${summary.commonWindow}</b></span>`;
+  renderHabitsSnippets();
+}
+
+async function loadHabits() {
+  const note = $("habits-note");
+  const button = $("habits-load");
+  const user = $("habits-user").value.trim();
+  if (!/^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})$/.test(user)) {
+    note.classList.add("error");
+    note.textContent = "That does not look like a GitHub username.";
+    return;
+  }
+
+  habits.user = user;
+  habits.limit = Number($("habits-limit").value);
+  habits.timeZone = $("habits-timezone").value.trim() || "UTC";
+  habits.windowHours = Number($("habits-window").value);
+  habits.title = $("habits-title").value;
+  button.disabled = true;
+  note.classList.remove("error");
+  note.textContent = `Searching GitHub for up to ${habits.limit} recent public commits by ${user}.`;
+  try {
+    const commits = await fetchRecentPublicCommits(user, { limit: habits.limit });
+    if (!commits.length) throw new Error("GitHub returned no indexed public non-merge commits");
+    habits.commits = commits;
+    habits.live = true;
+    renderHabits();
+    note.textContent = `Loaded ${commits.length} indexed public non-merge commits for ${user}.`;
+  } catch (error) {
+    note.classList.add("error");
+    note.textContent = `Live preview failed: ${error.message}. The generated workflow uses a token and has a higher rate limit.`;
+  } finally {
+    button.disabled = false;
+  }
 }
 
 // ---------------------------------------------------------------- media cards
@@ -274,7 +437,7 @@ function mapMedia(m) {
 async function inlineCover(item) {
   if (!item.coverUrl) return;
   try {
-    // cache: "reload" skips the HTTP cache — a plain <img> load of the same
+    // cache: "reload" skips the HTTP cache. A plain <img> load of the same
     // URL caches a response without CORS headers (the CDN varies on Origin),
     // and reading that entry here would fail the CORS check.
     const blob = await (await fetch(item.coverUrl, { mode: "cors", cache: "reload" })).blob();
@@ -304,7 +467,7 @@ function renderMedia() {
   const picked = $("picked");
   picked.innerHTML = "";
   if (!media.items.length) {
-    picked.innerHTML = `<li class="empty">Nothing yet — search on the left.</li>`;
+    picked.innerHTML = `<li class="empty">Nothing selected. Search on the left.</li>`;
   }
   for (const item of media.items) {
     const li = document.createElement("li");
@@ -415,7 +578,7 @@ $("anime-q").addEventListener("input", () => {
       host.hidden = !data.Page.media.length;
       $("anime-q").setAttribute("aria-expanded", String(!host.hidden));
     } catch (err) {
-      $("media-note").textContent = `Search failed (${err.message}). AniList rate-limits at 90 requests a minute — wait a moment.`;
+      $("media-note").textContent = `Search failed (${err.message}). AniList allows 90 requests a minute. Wait a moment and try again.`;
     }
   }, 350);
 });
@@ -438,17 +601,20 @@ async function bootMedia() {
 
 // ---------------------------------------------------------------------- wiring
 
-// Side panel: one list for every block; defense and media views swap on the stage.
+// Side panel: one list for every block. The matching view opens on the stage.
 function selectBlock(kind, id) {
   for (const b of $("side").querySelectorAll(".sideitem")) {
     b.setAttribute("aria-pressed", b.dataset.id === id);
   }
   $("view-defense").hidden = kind !== "defense";
+  $("view-habits").hidden = kind !== "habits";
   $("view-media").hidden = kind !== "media";
   if (kind === "defense") {
     state.block = id;
     syncBlockUI();
     render();
+  } else if (kind === "habits") {
+    renderHabits();
   } else {
     media.layout = id;
     renderMedia();
@@ -512,6 +678,29 @@ $("title").addEventListener("input", () => {
   }, 250);
 });
 
+$("habits-load").addEventListener("click", loadHabits);
+$("habits-user").addEventListener("keydown", (event) => {
+  if (event.key === "Enter") loadHabits();
+});
+$("habits-themeseg").addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-theme]");
+  if (!button) return;
+  habits.theme = button.dataset.theme;
+  for (const item of $("habits-themeseg").querySelectorAll("button")) {
+    item.setAttribute("aria-pressed", item === button);
+  }
+  renderHabits();
+});
+for (const id of ["habits-limit", "habits-timezone", "habits-window", "habits-title"]) {
+  $(id).addEventListener("change", () => {
+    habits.limit = Number($("habits-limit").value);
+    habits.timeZone = $("habits-timezone").value.trim() || "UTC";
+    habits.windowHours = Number($("habits-window").value);
+    habits.title = $("habits-title").value;
+    renderHabits();
+  });
+}
+
 // Output tabs.
 const tabs = ["workflow", "embed", "download", "how"];
 for (const t of tabs) {
@@ -537,10 +726,16 @@ $("dl-light").addEventListener("click", () => download("light"));
 
 // ----------------------------------------------------------------------- boot
 
-// Deep link: #night-shift, #cinematic-cards etc. select that block on load.
+// Deep links such as #night-shift and #coding-habits select a block on load.
 const hashItem = document.querySelector(`.sideitem[data-id="${CSS.escape(location.hash.slice(1))}"]`);
+const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+if (browserTimeZone) {
+  habits.timeZone = browserTimeZone;
+  $("habits-timezone").value = browserTimeZone;
+}
 syncBlockUI();
 render();
+renderHabits();
 bootMedia();
 pinRendererSha();
 loadGrid("okturan");

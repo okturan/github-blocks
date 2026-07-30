@@ -7,6 +7,8 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const outputDirectory = join(root, "examples/out");
 const readme = await readFile(join(root, "README.md"), "utf8");
+const siteHtml = await readFile(join(root, "site/index.html"), "utf8");
+const siteApp = await readFile(join(root, "site/app.mjs"), "utf8");
 const outputNames = (await readdir(outputDirectory))
   .filter((name) => name.endsWith(".svg"))
   .sort();
@@ -36,4 +38,22 @@ for (const name of galleryOutputs) {
   assert(outputNames.includes(name), `README gallery references missing output: ${name}`);
 }
 
-console.log(`Verified ${outputNames.length} deterministic SVG outputs and ${galleryOutputs.length} README gallery embeds`);
+assert(
+  /data-kind="habits" data-id="coding-habits"/.test(siteHtml),
+  "Configurator sidebar is missing the coding-habits block",
+);
+assert(/id="view-habits"/.test(siteHtml), "Configurator is missing the coding-habits view");
+assert(/id="habits-yaml"/.test(siteHtml), "Configurator is missing the coding-habits workflow output");
+assert(
+  /import \{ codingHabits \} from "\.\/blocks\/coding-habits\.mjs"/.test(siteApp),
+  "Configurator does not import the coding-habits renderer",
+);
+assert(
+  /fetchRecentPublicCommits/.test(siteApp) && /analyzeCodingHabits/.test(siteApp),
+  "Configurator does not load and analyze recent commits",
+);
+for (const [name, content] of [["README.md", readme], ["site/index.html", siteHtml], ["site/app.mjs", siteApp]]) {
+  assert(!content.includes("—"), `${name} contains an em dash`);
+}
+
+console.log(`Verified ${outputNames.length} SVG outputs, ${galleryOutputs.length} gallery embeds, and the coding-habits configurator`);
