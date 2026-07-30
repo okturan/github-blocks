@@ -44,6 +44,7 @@ assert(
 );
 assert(/id="view-habits"/.test(siteHtml), "Configurator is missing the coding-habits view");
 assert(/id="habits-yaml"/.test(siteHtml), "Configurator is missing the coding-habits workflow output");
+assert(/id="hero-title"/.test(siteHtml) && /id="hero-lede"/.test(siteHtml), "Configurator hero cannot be updated");
 assert(
   /import \{ codingHabits \} from "\.\/blocks\/coding-habits\.mjs"/.test(siteApp),
   "Configurator does not import the coding-habits renderer",
@@ -52,6 +53,10 @@ assert(
   /fetchRecentPublicCommits/.test(siteApp) && /analyzeCodingHabits/.test(siteApp),
   "Configurator does not load and analyze recent commits",
 );
+for (const kind of ["defense", "habits", "media"]) {
+  assert(new RegExp(`\\b${kind}: \\{`).test(siteApp), `Configurator hero is missing ${kind} copy`);
+}
+assert(/updateHero\(kind\)/.test(siteApp), "Configurator does not update the hero when a block is selected");
 for (const [name, content] of [["README.md", readme], ["site/index.html", siteHtml], ["site/app.mjs", siteApp]]) {
   assert(!content.includes("—"), `${name} contains an em dash`);
 }

@@ -14,6 +14,23 @@ import { fetchRecentPublicCommits } from "./lib/github-commits.mjs";
 
 const $ = (id) => document.getElementById(id);
 const DAY = Math.floor(Date.now() / 86_400_000);
+const HERO_COPY = {
+  defense: {
+    title: `YOUR COMMIT GRAPH<br>FIGHTS <span class="alt">BACK</span>`,
+    lede: "Turn a real contribution graph into an animated battle. Choose a game, set the difficulty, and copy a workflow that rebuilds the SVG each day.",
+    pageTitle: "Tower defense | github-blocks",
+  },
+  habits: {
+    title: `SEE WHEN YOUR<br>COMMITS <span class="alt">LAND</span>`,
+    lede: "Check up to 1,000 recent public commits. The report groups them by weekday and local time, then gives you a daily GitHub Actions workflow.",
+    pageTitle: "Coding habits | github-blocks",
+  },
+  media: {
+    title: `BUILD AN ANIME<br>SHELF FOR <span class="alt">GITHUB</span>`,
+    lede: "Search AniList, choose up to six titles, and render them as an SVG for your profile. Covers are embedded in the file so they survive GitHub's image proxy.",
+    pageTitle: "Anime cards | github-blocks",
+  },
+};
 
 const REGISTRY = {
   "lane-defense": {
@@ -602,6 +619,13 @@ async function bootMedia() {
 // ---------------------------------------------------------------------- wiring
 
 // Side panel: one list for every block. The matching view opens on the stage.
+function updateHero(kind) {
+  const copy = HERO_COPY[kind];
+  $("hero-title").innerHTML = copy.title;
+  $("hero-lede").textContent = copy.lede;
+  document.title = copy.pageTitle;
+}
+
 function selectBlock(kind, id) {
   for (const b of $("side").querySelectorAll(".sideitem")) {
     b.setAttribute("aria-pressed", b.dataset.id === id);
@@ -609,6 +633,7 @@ function selectBlock(kind, id) {
   $("view-defense").hidden = kind !== "defense";
   $("view-habits").hidden = kind !== "habits";
   $("view-media").hidden = kind !== "media";
+  updateHero(kind);
   if (kind === "defense") {
     state.block = id;
     syncBlockUI();
@@ -734,6 +759,7 @@ if (browserTimeZone) {
   $("habits-timezone").value = browserTimeZone;
 }
 syncBlockUI();
+updateHero("defense");
 render();
 renderHabits();
 bootMedia();
