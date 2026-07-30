@@ -4,10 +4,10 @@ Custom SVG modules for GitHub profile READMEs. Each block is a pure function:
 data in, a self-contained SVG string out. Generate the SVG in CI, commit it to
 an output branch, embed it in the README with a plain `<img>`.
 
-**Configurator: <https://okturan.github.io/github-blocks/>** — tune a
-tower-defense battle over your own contribution graph in the browser, then
-copy a ready-made workflow that keeps it updating daily. The site renders
-previews with the exact modules in this repo; nothing is hosted server-side.
+**Configurator: <https://okturan.github.io/github-blocks/>** lets you preview
+every block and copy the code needed to add one to a profile. Activity blocks
+include a scheduled workflow. Anime blocks include a Node script. The site
+uses the same renderers as this repository.
 
 Started with the anime section of [okturan/okturan](https://github.com/okturan/okturan);
 more blocks will land here as they get built.
@@ -43,7 +43,7 @@ own contribution graph.
 | `media-list` | 896×340 | One panel, numbered rows; meta and score right-aligned. |
 | `classic-cards` | 878×220 | The original okturan layout: dark panel, small cover, title + meta. |
 | `coding-habits` | 896×300 | Scheduled analysis of the latest X indexed public, default-branch, non-merge commits. No LLM required. |
-| `lane-defense` | 896×169 | Animated tower defense over your contribution graph: big commit days are towers, bug waves march the weekday lanes. Pre-simulated, baked to CSS keyframes — no JS. |
+| `lane-defense` | 896×169 | Animated tower defense over your contribution graph: big commit days are towers, bug waves march the weekday lanes. The renderer converts the simulation to CSS keyframes. The SVG contains no JavaScript. |
 | `night-shift` | 896×169 | Creeps follow a serpentine road through the graph; towers near the road fire plasma bolts with real intercept leads. |
 | `boss-fight` | 896×169 | The snk snake returns as a boss and eats commit cells while every level-2+ day fires on it. Three endings: ROUT, LAST STAND, CONSUMED (the snake wins). |
 
@@ -62,7 +62,7 @@ const svg = cinematicStrip([
     episodes: 12,        // used by poster-cards / media-list / classic-cards
     score: 82,           // 0–100 (AniList averageScore); optional
     genres: ["Horror", "Mystery", "Supernatural"],
-    cover: "data:image/jpeg;base64,...", // data URI — GitHub's camo proxy blocks external fetches inside SVGs
+    cover: "data:image/jpeg;base64,...", // data URI; GitHub blocks external fetches inside SVGs
     url: "https://anilist.co/anime/2246/Mononoke/",
     color: "#58a6ff",    // placeholder fill when cover is missing
   },
@@ -77,11 +77,10 @@ falling back to colored initials.
 
 ### Generate coding habits on a schedule
 
-The coding-habits block is “agentic” in the practical sense: a scheduled action
-checks a configurable number of recent commits, recomputes the evidence, and
-publishes a fresh SVG. Its day, time-window, active-date, median, and weekday
-chart calculations are deterministic, so the free path needs no LLM, API key,
-or inference service.
+The coding-habits block runs on a schedule. It checks a configurable number of
+recent public commits, groups their dates by weekday and time, and publishes a
+fresh SVG. The calculation is deterministic and does not need an LLM or paid
+API.
 
 ```yaml
 name: Update coding habits
@@ -114,14 +113,26 @@ jobs:
         run: node action/generate-coding-habits.mjs
 
       - name: Publish to the profile repository's output branch
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          cd dist
-          git init -b output
+          mkdir output
+          cd output
+          git init
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads origin output >/dev/null 2>&1; then
+            git fetch --depth=1 origin output
+            git checkout -b output FETCH_HEAD
+          else
+            git checkout -b output
+          fi
+          cp ../dist/coding-habits*.svg .
+          git add coding-habits.svg coding-habits-light.svg
+          git diff --cached --quiet && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .
           git commit -m "Update coding habits"
-          git push --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" output
+          git push origin output
 ```
 
 Embed the two generated themes from the `output` branch:
@@ -150,7 +161,7 @@ const grid = await fetchContributionGrid("okturan"); // weeks × 7, levels 0–4
 
 // Deterministic: same grid + level + seed → identical battle.
 // A committed SVG can't randomize per page load (camo caches it, no JS runs
-// in <img>), so rotate in CI instead — pick a new battle each cron run:
+// in <img>), so rotate in CI instead. Pick a new battle each cron run:
 const day = Math.floor(Date.now() / 86400000);
 const svg = laneDefense(grid, {
   level: 1 + (day % 3),        // 1 PATROL · 2 SIEGE · 3 OVERRUN
@@ -181,24 +192,24 @@ points at missing output, or if an output introduces executable script content.
 
 The [configurator](https://okturan.github.io/github-blocks/) generates a
 workflow that checks out this repo at a pinned commit and runs
-`action/generate.mjs` on GitHub's runners — no vendoring, no hosting. Config
+`action/generate.mjs` on GitHub's runners. No vendoring or hosting is needed. Config
 is all env vars: `BLOCK` (`lane-defense` / `night-shift` / `boss-fight`),
 `PROFILE_USER`, `LD_LEVEL` (1–3 or `rotate`; boss-fight reads them as endings),
 `LD_SEED` (int or `daily`), `LD_THEMES`, `LD_TITLE`, `LD_OUT`.
 
 ## Repo layout
 
-- `blocks/` — the renderers (pure ESM, no dependencies; run in Node and browsers)
-- `lib/` — shared helpers, the defense-sim engine, contribution-grid fetching/parsing
-- `action/` — CI entry points for consumers' workflows
-- `site/` — the configurator, deployed to GitHub Pages by `.github/workflows/pages.yml`
-- `examples/` — `node examples/render-all.mjs` renders every block with sample data
+- `blocks/`: renderers written as dependency-free ESM for Node and browsers
+- `lib/`: shared helpers, the defense simulation, and GitHub data fetching
+- `action/`: CI entry points for profile workflows
+- `site/`: the configurator deployed by `.github/workflows/pages.yml`
+- `examples/`: committed sample output from `node examples/render-all.mjs`
 
 ## Notes
 
 - Covers must be embedded as data URIs; fetch them at generation time
   (see `loadAnime()` in okturan/okturan's `generate-profile-cards.mjs`).
-- Consumers vendor the renderer they use — CI for a profile repo only checks
+- Consumers vendor the renderer they use. CI for a profile repo only checks
   out that repo, so keep the generator self-contained and treat this repo as
   the canonical source to copy from.
 - Palette matches GitHub dark (`#0d1117` / `#161b22` / `#30363d`), so blocks

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>github-blocks — your commit graph fights back</title>
-<meta name="description" content="Configure animated SVG blocks for your GitHub profile README: tower-defense battles over your real contribution graph, plus media-card shelves. No scripts in the SVGs; a workflow you own keeps them fresh.">
+<title>github-blocks | SVG cards for your GitHub profile</title>
+<meta name="description" content="Build GitHub profile SVGs from contribution data, recent public commits, and anime lists. Generate the files in your browser or keep them current with GitHub Actions.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='3' fill='%230a0e0b'/><rect x='2.5' y='2.5' width='4' height='4' rx='1' fill='%2339d353'/><rect x='9.5' y='2.5' width='4' height='4' rx='1' fill='%23006d32'/><rect x='2.5' y='9.5' width='4' height='4' rx='1' fill='%230e4429'/><rect x='9.5' y='9.5' width='4' height='4' rx='1' fill='%23a371f7'/></svg>">
 <link rel="stylesheet" href="./style.css">
 </head>
@@ -20,7 +20,7 @@
 
   <section class="hero">
     <h1>YOUR COMMIT GRAPH<br>FIGHTS <span class="alt">BACK</span></h1>
-    <p class="lede">Animated SVG blocks for your GitHub profile README: three tower-defense battles that run on your real contribution data, and four media-card shelves. Everything is generated up front — the SVGs ship at roughly 150&nbsp;KB with no scripts in them, and GitHub renders them like any other image.</p>
+    <p class="lede">Build SVG cards for a GitHub profile README. Choose from three contribution-graph games, four anime layouts, and a report that groups recent public commits by weekday and time. GitHub receives a finished image with no JavaScript inside it.</p>
   </section>
 
   <div class="app">
@@ -34,6 +34,10 @@
       </button>
       <button class="sideitem" data-kind="defense" data-id="boss-fight" aria-pressed="false">
         <b>BOSS FIGHT</b><span>the snk snake, three endings</span>
+      </button>
+      <div class="sgroup">ACTIVITY</div>
+      <button class="sideitem" data-kind="habits" data-id="coding-habits" aria-pressed="false">
+        <b>CODING HABITS</b><span>recent public commits by day and time</span>
       </button>
       <div class="sgroup">MEDIA CARDS</div>
       <button class="sideitem" data-kind="media" data-id="cinematic-strip" aria-pressed="false">
@@ -109,7 +113,7 @@
 
         <section id="ship">
           <h2><span class="n">02</span>SHIP IT</h2>
-          <p class="sectionlede">GitHub's image proxy caches README images and never runs scripts inside them, so the SVG can't reroll itself per visitor. The workflow re-simulates from your live graph on a daily cron and pushes the result to an <code class="mono">output</code> branch in your profile repo. Different day, different battle.</p>
+          <p class="sectionlede">GitHub caches README images and does not run scripts inside them. This workflow rebuilds the battle once a day from your current contribution graph and writes it to an <code class="mono">output</code> branch.</p>
 
           <div class="tabbar" role="tablist" aria-label="Output format">
             <button role="tab" id="tab-workflow" aria-selected="true" aria-controls="panel-workflow">WORKFLOW</button>
@@ -119,7 +123,7 @@
           </div>
 
           <div class="tabpanel" role="tabpanel" id="panel-workflow" aria-labelledby="tab-workflow">
-            <p>Create this file in your profile repo — the one named after your username — at <code id="wfpath">.github/workflows/lane-defense.yml</code>. It carries the settings you picked above and pins the renderer to the current commit. Push it, then run it once from the Actions tab; that first run creates the <code>output</code> branch, and the schedule takes over from there.</p>
+            <p>Save this file in the profile repository named after your username at <code id="wfpath">.github/workflows/lane-defense.yml</code>. Push it, then run it once from the Actions tab. Later runs use the schedule.</p>
             <div class="codeblock">
               <pre id="yaml"></pre>
               <button class="copy" data-copy="yaml">COPY</button>
@@ -127,7 +131,7 @@
           </div>
 
           <div class="tabpanel" role="tabpanel" id="panel-embed" aria-labelledby="tab-embed" hidden>
-            <p>Paste this into your profile <code>README.md</code> once the workflow has run. Dark and light swap automatically. Raw URLs sit behind a cache of about five minutes, so a fresh battle takes a moment to show up.</p>
+            <p>After the first workflow run, paste this into your profile <code>README.md</code>. The <code>&lt;picture&gt;</code> element selects the matching theme. GitHub may cache a new image for a few minutes.</p>
             <div class="codeblock">
               <pre id="embed"></pre>
               <button class="copy" data-copy="embed">COPY</button>
@@ -135,7 +139,7 @@
           </div>
 
           <div class="tabpanel" role="tabpanel" id="panel-download" aria-labelledby="tab-download" hidden>
-            <p>The exact battle configured above, as files. Commit them anywhere an image works. They won't update — some people prefer that.</p>
+            <p>Download the current render if you want a fixed image. These files do not update on their own.</p>
             <div class="btnrow">
               <button id="dl-dark">DOWNLOAD DARK SVG</button>
               <button id="dl-light">DOWNLOAD LIGHT SVG</button>
@@ -169,15 +173,105 @@
         </section>
       </div>
 
+      <div id="view-habits" hidden>
+        <section id="habits-configure">
+          <h2><span class="n">01</span>CHECK RECENT COMMITS</h2>
+          <p class="sectionlede">Choose how many public, non-merge commits to inspect. The preview uses GitHub's public commit search without a token, so repeated loads may hit a rate limit. The scheduled workflow uses the repository token.</p>
+
+          <div class="rig">
+            <div class="frame"><img id="habits-preview" alt="Recent public coding habits grouped by weekday and time"></div>
+            <div class="statline" id="habits-stats" aria-live="polite"></div>
+
+            <div class="controls">
+              <div class="control">
+                <label for="habits-user">GitHub username</label>
+                <div class="row">
+                  <input type="text" id="habits-user" value="okturan" spellcheck="false" autocomplete="off" maxlength="39" placeholder="octocat">
+                  <button class="primary" id="habits-load">LOAD COMMITS</button>
+                </div>
+                <p class="hint" id="habits-note">The first preview uses sample commit dates. Load a username for live data.</p>
+              </div>
+
+              <div class="control">
+                <label for="habits-limit">Commits to inspect</label>
+                <select id="habits-limit">
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                  <option value="250">250</option>
+                  <option value="500" selected>500</option>
+                  <option value="1000">1000</option>
+                </select>
+                <p class="hint">GitHub returns at most 1,000 search results.</p>
+              </div>
+
+              <div class="control">
+                <label for="habits-timezone">Timezone</label>
+                <input type="text" id="habits-timezone" value="UTC" spellcheck="false" autocomplete="off" placeholder="Europe/Istanbul">
+                <p class="hint">Use an IANA timezone such as <code>Europe/Istanbul</code>.</p>
+              </div>
+
+              <div class="control">
+                <label for="habits-window">Time window</label>
+                <select id="habits-window">
+                  <option value="1">1 hour</option>
+                  <option value="3" selected>3 hours</option>
+                  <option value="6">6 hours</option>
+                  <option value="12">12 hours</option>
+                </select>
+                <p class="hint">The report finds the busiest window of this length.</p>
+              </div>
+
+              <div class="control">
+                <span class="label" id="habits-theme-label">Theme</span>
+                <div class="seg" role="group" aria-labelledby="habits-theme-label" id="habits-themeseg">
+                  <button data-theme="dark" aria-pressed="true">DARK</button>
+                  <button data-theme="light" aria-pressed="false">LIGHT</button>
+                </div>
+                <p class="hint">The workflow writes both theme variants.</p>
+              </div>
+
+              <div class="control">
+                <label for="habits-title">Header title</label>
+                <input type="text" id="habits-title" value="RECENT PUBLIC CODING HABITS" maxlength="54" spellcheck="false">
+                <p class="hint">Only commit dates are analyzed. Commit messages are not sent to an LLM.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="habits-ship">
+          <h2><span class="n">02</span>ADD IT TO YOUR PROFILE</h2>
+          <p class="sectionlede">Add the workflow to your profile repository and run it once. It updates the report every day and keeps the generated SVGs on the <code class="mono">output</code> branch.</p>
+
+          <div class="step">
+            <h3><span class="n">A</span>WORKFLOW</h3>
+            <p>Save this as <code>.github/workflows/coding-habits.yml</code>. The selected sample size, timezone, window, and title are included.</p>
+            <div class="codeblock">
+              <pre id="habits-yaml"></pre>
+              <button class="copy" data-copy="habits-yaml">COPY</button>
+            </div>
+          </div>
+
+          <div class="step">
+            <h3><span class="n">B</span>README</h3>
+            <p>After the workflow finishes, paste this into <code>README.md</code>.</p>
+            <div class="codeblock">
+              <pre id="habits-embed"></pre>
+              <button class="copy" data-copy="habits-embed">COPY</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
       <div id="view-media" hidden>
         <section id="library">
           <h2><span class="n">01</span>PICK YOUR SHELF</h2>
-          <p class="sectionlede">Search hits AniList's public API; covers are fetched in your browser and inlined into the SVG, so the preview is exactly what a generator run produces. Links go to MyAnimeList when it has the entry. Switch layouts in the side panel.</p>
+          <p class="sectionlede">Search AniList, choose up to six titles, and switch layouts in the sidebar. The browser converts each cover to a data URI because GitHub blocks remote images nested inside an SVG.</p>
 
           <div class="controls media-controls">
             <div class="control search-wrap">
               <label for="anime-q">Add anime</label>
-              <input type="text" id="anime-q" placeholder="Search — try Mononoke" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="anime-results">
+              <input type="text" id="anime-q" placeholder="Search for Mononoke" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="anime-results">
               <div class="results" id="anime-results" role="listbox" hidden></div>
               <p class="hint" id="media-note">AniList search. Up to six items.</p>
             </div>
@@ -193,7 +287,7 @@
 
         <section>
           <h2><span class="n">02</span>GENERATE IT</h2>
-          <p class="sectionlede">Media cards don't ship with a ready-made workflow — your list rarely changes, so most people regenerate by hand or from their own script. This snippet reproduces the preview above, covers included:</p>
+          <p class="sectionlede">Anime lists usually change less often than activity data, so this section produces a Node script instead of a scheduled workflow. Run it again when you edit the shelf.</p>
           <div class="codeblock">
             <pre id="media-code"></pre>
             <button class="copy" data-copy="media-code">COPY</button>
