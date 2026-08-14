@@ -40,6 +40,11 @@ for (const name of galleryOutputs) {
 
 assert(outputNames.includes("commit-life.svg"), "examples/out is missing commit-life.svg");
 assert(outputNames.includes("commit-life-light.svg"), "examples/out is missing commit-life-light.svg");
+assert(galleryOutputs.includes("commit-life.svg"), "README gallery is missing commit-life.svg");
+assert(
+  /#commit-life/.test(readme) && /#lane-defense/.test(readme),
+  "README gallery should deep-link graph blocks to the configurator",
+);
 assert(
   /data-kind="life" data-id="commit-life"/.test(siteHtml),
   "Configurator sidebar is missing the commit-life block",
