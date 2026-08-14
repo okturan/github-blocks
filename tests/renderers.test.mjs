@@ -5,6 +5,7 @@ import { bossFight } from "../blocks/boss-fight.mjs";
 import { cinematicStrip } from "../blocks/cinematic-strip.mjs";
 import { classicCards } from "../blocks/classic-cards.mjs";
 import { codingHabits } from "../blocks/coding-habits.mjs";
+import { commitLife } from "../blocks/commit-life.mjs";
 import { laneDefense } from "../blocks/lane-defense.mjs";
 import { mediaList } from "../blocks/media-list.mjs";
 import { nightShift } from "../blocks/night-shift.mjs";
@@ -93,7 +94,7 @@ test("media renderers neutralize link, cover, id, and text injection", () => {
 
 test("defense renderers are deterministic and expose reduced-motion CSS", () => {
   const grid = sampleContributionGrid(7);
-  for (const render of [laneDefense, nightShift, bossFight]) {
+  for (const render of [laneDefense, nightShift, bossFight, commitLife]) {
     const first = render(grid, { level: 2, seed: 7 });
     assert.equal(first, render(grid, { level: 2, seed: 7 }));
     assert.match(first, /@media \(prefers-reduced-motion:reduce\)\{\*\{animation-play-state:paused!important\}\}/);
@@ -105,9 +106,9 @@ test("lane and road difficulty levels retain their reference outcomes", () => {
   const grid = sampleContributionGrid(7);
   const expected = {
     lane: [
-      { towers: 22, enemies: 15, kills: 15, leaked: 0, duration: 39 },
-      { towers: 22, enemies: 24, kills: 17, leaked: 7, duration: 47 },
-      { towers: 22, enemies: 35, kills: 16, leaked: 19, duration: 56 },
+      { towers: 22, enemies: 15, kills: 15, leaked: 0, duration: 45, verdict: "CLEAN SWEEP" },
+      { towers: 22, enemies: 24, kills: 18, leaked: 6, duration: 52, verdict: "CORE HELD" },
+      { towers: 22, enemies: 35, kills: 15, leaked: 20, duration: 60, verdict: "CORE BREACHED" },
     ],
     night: [
       { towers: 22, enemies: 12, kills: 12, leaked: 0, duration: 43 },
@@ -119,8 +120,12 @@ test("lane and road difficulty levels retain their reference outcomes", () => {
   for (const [name, render] of [["lane", laneDefense], ["night", nightShift]]) {
     for (const level of [1, 2, 3]) {
       let stats;
-      render(grid, { level, seed: 7, onStats: (value) => { stats = value; } });
+      const svg = render(grid, { level, seed: 7, onStats: (value) => { stats = value; } });
       assert.deepEqual(stats, expected[name][level - 1]);
+      if (name === "lane") {
+        assert.match(svg, /WAVE 1/);
+        assert.match(svg, new RegExp(stats.verdict));
+      }
     }
   }
 });
@@ -140,8 +145,39 @@ test("boss levels retain rout, last-stand, and consumed outcomes", () => {
   }
 });
 
+test("commit life retains a reference outcome on the sample grid", () => {
+  const grid = sampleContributionGrid(7);
+  let stats;
+  const svg = commitLife(grid, { seed: 7, onStats: (value) => { stats = value; } });
+  assert.deepEqual(stats, {
+    gens: 22, living: 16, startLiving: 133, fate: "still", period: 1, duration: 9,
+  });
+  assert.match(svg, /STILL LIFE/);
+  assert.match(svg, /GEN 0→22/);
+  assert.match(svg, /16 LIVE/);
+  assert.doesNotMatch(svg, /<script\b|javascript:/i);
+  const other = commitLife(grid, { seed: 8, onStats: (value) => { stats = value; } });
+  assert.equal(stats.gens, 22);
+  assert.equal(stats.fate, "still");
+  assert.notEqual(svg, other);
+});
+
+test("commit life HighLife rule is deterministic and diverges from classic", () => {
+  const grid = sampleContributionGrid(7);
+  let classic, high;
+  const svg = commitLife(grid, {
+    seed: 7, rule: "B36/S23", title: "HIGHLIFE B36/S23",
+    onStats: (value) => { high = value; },
+  });
+  assert.equal(svg, commitLife(grid, { seed: 7, rule: "B36/S23", title: "HIGHLIFE B36/S23" }));
+  commitLife(grid, { seed: 7, onStats: (value) => { classic = value; } });
+  assert.notDeepEqual(classic, high);
+  assert.match(svg, /HIGHLIFE B36\/S23/);
+  assert.doesNotMatch(svg, /<script\b|javascript:/i);
+});
+
 test("defense renderers reject empty or malformed contribution grids", () => {
-  for (const render of [laneDefense, nightShift, bossFight]) {
+  for (const render of [laneDefense, nightShift, bossFight, commitLife]) {
     assert.throws(() => render([]), /grid must be weeks/);
     assert.throws(() => render([[0, 1]]), /grid must be weeks/);
   }

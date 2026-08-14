@@ -27,13 +27,17 @@
     <aside class="side" id="side" aria-label="Available blocks">
       <div class="sgroup">TOWER DEFENSE</div>
       <button class="sideitem" data-kind="defense" data-id="lane-defense" aria-pressed="true">
-        <b>LANE DEFENSE</b><span>bug waves vs your commit days</span>
+        <b>LANE DEFENSE</b><span>waves, fortresses, hold the core</span>
       </button>
       <button class="sideitem" data-kind="defense" data-id="night-shift" aria-pressed="false">
         <b>NIGHT SHIFT</b><span>a road through the graph, led shots</span>
       </button>
       <button class="sideitem" data-kind="defense" data-id="boss-fight" aria-pressed="false">
         <b>BOSS FIGHT</b><span>the snk snake, three endings</span>
+      </button>
+      <div class="sgroup">LIFE</div>
+      <button class="sideitem" data-kind="life" data-id="commit-life" aria-pressed="false">
+        <b>COMMIT LIFE</b><span>Conway on the contribution graph</span>
       </button>
       <div class="sgroup">ACTIVITY</div>
       <button class="sideitem" data-kind="habits" data-id="coding-habits" aria-pressed="false">
@@ -73,7 +77,7 @@
                 <p class="hint" id="gridnote">Loading live contribution data…</p>
               </div>
 
-              <div class="control">
+              <div class="control" id="control-level">
                 <span class="label" id="lvl-label">Difficulty</span>
                 <div class="seg" role="group" aria-labelledby="lvl-label" id="levelseg">
                   <button data-level="1" aria-pressed="false">1 PATROL</button>
@@ -105,7 +109,7 @@
               <div class="control">
                 <label for="title">Header title</label>
                 <input type="text" id="title" value="COMMIT DEFENSE" maxlength="40" spellcheck="false">
-                <p class="hint">Battle stats get appended after the title.</p>
+                <p class="hint" id="title-hint">Battle stats get appended after the title.</p>
               </div>
             </div>
           </div>
@@ -113,7 +117,7 @@
 
         <section id="ship">
           <h2><span class="n">02</span>SHIP IT</h2>
-          <p class="sectionlede">GitHub caches README images and does not run scripts inside them. This workflow rebuilds the battle once a day from your current contribution graph and writes it to an <code class="mono">output</code> branch.</p>
+          <p class="sectionlede">GitHub caches README images and does not run scripts inside them. This workflow <span id="ship-verb">rebuilds the battle</span> once a day from your current contribution graph and writes it to an <code class="mono">output</code> branch.</p>
 
           <div class="tabbar" role="tablist" aria-label="Output format">
             <button role="tab" id="tab-workflow" aria-selected="true" aria-controls="panel-workflow">WORKFLOW</button>
@@ -154,15 +158,15 @@
               </div>
               <div class="fact">
                 <h3>Simulated, then baked</h3>
-                <p>The sim runs once, at generation time. Every laser flash and every death becomes a CSS keyframe. The SVG that ships contains no code, only choreography.</p>
+                <p id="how-bake">The sim runs once, at generation time. Every laser flash and every death becomes a CSS keyframe. The SVG that ships contains no code, only choreography.</p>
               </div>
               <div class="fact">
                 <h3>Deterministic</h3>
-                <p>Same grid, same level, same seed: the identical battle, in both themes. Rotation comes from the cron changing the seed each day, not from dice at view time.</p>
+                <p id="how-det">Same grid, same level, same seed: the identical battle, in both themes. Rotation comes from the cron changing the seed each day, not from dice at view time.</p>
               </div>
-              <div class="fact">
-                <h3>Balanced to your graph</h3>
-                <p>Days at contribution level 3 or 4 become towers. A sparse graph promotes level-2 days until there are at least eight; a dense one gets thinned, and enemy HP scales with the tower count. Level 1 is winnable everywhere. Level 3 is not.</p>
+              <div class="fact" id="how-balance">
+                <h3 id="how-extra-name">Balanced to your graph</h3>
+                <p id="how-extra">Days at contribution level 3 or 4 become towers. A sparse graph promotes level-2 days until there are at least eight; a dense one gets thinned, and enemy HP scales with the tower count. Level 1 is winnable everywhere. Level 3 is not.</p>
               </div>
               <div class="fact">
                 <h3>Nothing to host</h3>

@@ -3,6 +3,7 @@
 import { laneDefense } from "./blocks/lane-defense.mjs";
 import { nightShift } from "./blocks/night-shift.mjs";
 import { bossFight } from "./blocks/boss-fight.mjs";
+import { commitLife } from "./blocks/commit-life.mjs";
 import { sampleContributionGrid } from "./lib/contrib.mjs";
 import { cinematicStrip } from "./blocks/cinematic-strip.mjs";
 import { posterCards } from "./blocks/poster-cards.mjs";
@@ -19,6 +20,11 @@ const HERO_COPY = {
     title: `YOUR COMMIT GRAPH<br>FIGHTS <span class="alt">BACK</span>`,
     lede: "Turn a real contribution graph into an animated battle. Choose a game, set the difficulty, and copy a workflow that rebuilds the SVG each day.",
     pageTitle: "Tower defense | github-blocks",
+  },
+  life: {
+    title: `YOUR COMMITS<br>KEEP <span class="alt">LIVING</span>`,
+    lede: "Days you committed are live cells. Empty days are dead. Conway's Game of Life runs on the graph, then every generation bakes into CSS. The SVG has no JavaScript.",
+    pageTitle: "Commit life | github-blocks",
   },
   habits: {
     title: `SEE WHEN YOUR<br>COMMITS <span class="alt">LAND</span>`,
@@ -41,9 +47,9 @@ const REGISTRY = {
     levelWord: "Difficulty",
     rotateHint: (name) => `Cycles PATROL → SIEGE → OVERRUN each day (today: ${name}).`,
     fixedHint: (name) => `Fixed at ${name} on every regeneration.`,
-    alt: "Tower defense preview: bug waves march the weekday rows while towers on big commit days fire lasers",
+    alt: "Tower defense preview: bug waves march the weekday rows while fortress days splash and a core on the right takes leaks",
     howName: "How Lane Defense plays",
-    how: "Bugs spawn in bursts and march along the weekday rows at different speeds. Red bugs are weak, orange bugs are tougher, and purple bugs are tanks. Each tower fires at the nearest target in range. Anything the towers miss leaves the graph as a leak.",
+    how: "Bugs spawn in waves and march the weekday rows. Red bugs are scouts, orange bugs are soldiers, and purple bugs are tanks with a health bar. Each wave ends with a tank. The brightest commit days are fortresses: longer range, double damage, and splash. Hits slow whatever they catch. Leaks strike the core on the right. PATROL is a clean sweep, SIEGE holds the core with a few leaks, and OVERRUN breaches it.",
   },
   "night-shift": {
     fn: nightShift,
@@ -68,6 +74,28 @@ const REGISTRY = {
     alt: "Boss fight preview: a snake eats commit cells while every fortified day fires lasers at it",
     howName: "How Boss Fight plays",
     how: "The snake moves through the graph at a constant speed and eats unfortified cells. Days at level 2 or higher hold their ground and fire when the head is in range. The selected ending sets the boss health. ROUT ends near the halfway point, LAST STAND reaches 86 percent, and CONSUMED lets the snake eat the graph.",
+  },
+  "commit-life": {
+    fn: commitLife,
+    workflowName: "Commit life",
+    defaultTitle: "COMMIT LIFE",
+    noLevel: true,
+    seedLabel: "Brightness seed",
+    titleHint: "The subtitle shows generations, living cells, and how the board ends.",
+    dailySeedHint: "The cron tints newly born cells each day. The Life pattern comes from the graph.",
+    fixedSeedHint: (seed) => `Locked to seed ${seed}. Same born-cell greens until you change it.`,
+    alt: "Conway's Game of Life running on a GitHub contribution graph: commit days live, empty days die",
+    embedAlt: "Conway's Game of Life animated over my GitHub contribution graph",
+    howName: "How Commit Life plays",
+    how: "Each day with a commit is a live cell. Empty days are dead. The board uses Conway's classic B3/S23 rules on a bounded grid, so patterns can fall off the edges like a graph fading. Born cells pop in; dying cells fade to empty. Generations bake into CSS keyframes. The SVG that ships contains no JavaScript.",
+    shipVerb: "reruns Life",
+    howBake: "The sim runs once, at generation time. Every birth and every death becomes a CSS keyframe. The SVG that ships contains no code, only choreography.",
+    howDet: "Same grid, same seed: the identical Life run, in both themes. The pattern comes from the graph. The seed only tints cells born on empty days.",
+    howExtraName: "Classic B3/S23",
+    howExtra: "A dead cell with three live neighbors is born. A live cell with two or three neighbors survives. The board does not wrap, so gliders and other patterns can walk off the sides.",
+    cronNote: "daily; refreshes the graph",
+    workflowStep: "Run today's Life",
+    workflowCommit: "Update commit-life",
   },
 };
 
@@ -143,33 +171,58 @@ function render() {
 
   const s = state.stats;
   const src = state.gridIsLive ? `@${state.user}` : "SAMPLE GRID";
-  const name = reg().levelNames[effectiveLevel() - 1];
-  const battle = s.ending
-    ? `<span>ENDING <b>${s.ending}</b></span><span>BOSS HP <b>${s.bossHP}</b></span><span>HITS LANDED <b>${s.hits}</b></span>`
-    : `<span>WAVE <b>${s.enemies}</b></span><span>KILLS <b>${s.kills}</b></span><span class="warn">LEAKED <b>${s.leaked}</b></span>`;
-  $("stats").innerHTML = `
+  if (s.fate) {
+    const fateText = s.fate === "still" ? "STILL LIFE"
+      : s.fate === "extinct" ? "EXTINCT"
+      : s.fate === "oscillator" ? `PERIOD ${s.period}`
+      : "CHAOS";
+    $("stats").innerHTML = `
+    <span>GRID <b>${src}</b></span>
+    <span>GENS <b>0→${s.gens}</b></span>
+    <span>LIVE <b>${s.living}/${s.startLiving}</b></span>
+    <span>FATE <b>${fateText}</b></span>
+    <span>SEED <b>${effectiveSeed()}</b></span>
+    <span>LOOP <b>${s.duration}S</b></span>`;
+  } else {
+    const name = reg().levelNames[effectiveLevel() - 1];
+    const battle = s.ending
+      ? `<span>ENDING <b>${s.ending}</b></span><span>BOSS HP <b>${s.bossHP}</b></span><span>HITS LANDED <b>${s.hits}</b></span>`
+      : `<span>WAVE <b>${s.enemies}</b></span><span>KILLS <b>${s.kills}</b></span><span class="warn">LEAKED <b>${s.leaked}</b></span>${s.verdict ? `<span>VERDICT <b>${s.verdict}</b></span>` : ""}`;
+    $("stats").innerHTML = `
     <span>GRID <b>${src}</b></span>
     <span>${reg().levelWord.toUpperCase()} <b>${effectiveLevel()} ${name}</b></span>
     <span>SEED <b>${effectiveSeed()}</b></span>
     <span>TOWERS <b>${s.towers}</b></span>
     ${battle}
     <span>LOOP <b>${s.duration}S</b></span>`;
+    $("levelnote").textContent = state.level === "rotate" ? reg().rotateHint(name) : reg().fixedHint(name);
+  }
 
-  $("levelnote").textContent = state.level === "rotate" ? reg().rotateHint(name) : reg().fixedHint(name);
   $("seednote").textContent = state.seedMode === "daily"
-    ? "The cron bakes a new battle every day."
-    : `Locked to seed ${state.seed}. The same battle until you change it.`;
+    ? (reg().dailySeedHint || "The cron bakes a new battle every day.")
+    : (reg().fixedSeedHint ? reg().fixedSeedHint(state.seed) : `Locked to seed ${state.seed}. The same battle until you change it.`);
 
   renderSnippets();
 }
 
 function syncBlockUI() {
   const r = reg();
-  const segButtons = $("levelseg").querySelectorAll("button[data-level]");
-  segButtons.forEach((b) => {
-    if (b.dataset.level !== "rotate") b.textContent = `${b.dataset.level} ${r.levelNames[+b.dataset.level - 1]}`;
-  });
-  document.querySelector("#lvl-label").textContent = r.levelWord;
+  $("control-level").hidden = !!r.noLevel;
+  $("how-balance").hidden = !!r.noLevel && !r.howExtra;
+  $("seed-label").textContent = r.seedLabel || "Battle seed";
+  $("title-hint").textContent = r.titleHint || "Battle stats get appended after the title.";
+  $("ship-verb").textContent = r.shipVerb || "rebuilds the battle";
+  $("how-bake").textContent = r.howBake || "The sim runs once, at generation time. Every laser flash and every death becomes a CSS keyframe. The SVG that ships contains no code, only choreography.";
+  $("how-det").textContent = r.howDet || "Same grid, same level, same seed: the identical battle, in both themes. Rotation comes from the cron changing the seed each day, not from dice at view time.";
+  $("how-extra-name").textContent = r.howExtraName || "Balanced to your graph";
+  $("how-extra").textContent = r.howExtra || "Days at contribution level 3 or 4 become towers. A sparse graph promotes level-2 days until there are at least eight; a dense one gets thinned, and enemy HP scales with the tower count. Level 1 is winnable everywhere. Level 3 is not.";
+  if (!r.noLevel) {
+    const segButtons = $("levelseg").querySelectorAll("button[data-level]");
+    segButtons.forEach((b) => {
+      if (b.dataset.level !== "rotate") b.textContent = `${b.dataset.level} ${r.levelNames[+b.dataset.level - 1]}`;
+    });
+    document.querySelector("#lvl-label").textContent = r.levelWord;
+  }
   $("how-name").textContent = r.howName;
   $("how-text").textContent = r.how;
   if (!state.titleDirty) {
@@ -187,12 +240,25 @@ function renderSnippets() {
   const level = state.level === "rotate" ? "rotate" : String(state.level);
   const seed = state.seedMode === "daily" ? "daily" : String(state.seed);
   const block = state.block;
+  const r = reg();
   $("wfpath").textContent = `.github/workflows/${block}.yml`;
-  $("yaml").textContent = `name: ${reg().workflowName}
+  const envLines = [
+    `          BLOCK: ${yamlQuote(block)}`,
+    `          PROFILE_USER: ${yamlQuote(user)}`,
+  ];
+  if (!r.noLevel) {
+    envLines.push(`          LD_LEVEL: ${yamlQuote(level)} # 1 | 2 | 3 | rotate`);
+  }
+  envLines.push(`          LD_SEED: ${yamlQuote(seed)} # ${r.noLevel ? "daily = new born-cell tints every run" : "daily = new battle every run"}`);
+  envLines.push(`          LD_TITLE: ${yamlQuote(state.title || r.defaultTitle)}`);
+  const cronNote = r.cronNote || "daily; rotates the battle";
+  const stepName = r.workflowStep || "Simulate today's battle";
+  const commitMsg = r.workflowCommit || `Update ${block} battle`;
+  $("yaml").textContent = `name: ${r.workflowName}
 
 on:
   schedule:
-    - cron: "15 0 * * *" # daily; rotates the battle
+    - cron: "15 0 * * *" # ${cronNote}
   workflow_dispatch:
 
 permissions:
@@ -209,13 +275,9 @@ jobs:
           repository: okturan/github-blocks
           ref: ${state.renderSha}
 
-      - name: Simulate today's battle
+      - name: ${stepName}
         env:
-          BLOCK: ${yamlQuote(block)}
-          PROFILE_USER: ${yamlQuote(user)}
-          LD_LEVEL: ${yamlQuote(level)} # 1 | 2 | 3 | rotate
-          LD_SEED: ${yamlQuote(seed)} # daily = new battle every run
-          LD_TITLE: ${yamlQuote(state.title || reg().defaultTitle)}
+${envLines.join("\n")}
         run: node action/generate.mjs
 
       - name: Publish to output branch
@@ -225,14 +287,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "Update ${block} battle"
+          git commit -m "${commitMsg}"
           git push --force "https://x-access-token:\${{ github.token }}@github.com/\${{ github.repository }}.git" output`;
 
   const raw = (f) => `https://raw.githubusercontent.com/${user}/${user}/output/${f}`;
   $("embed").textContent = `<picture>
   <source media="(prefers-color-scheme: dark)" srcset="${raw(`${block}.svg`)}">
   <source media="(prefers-color-scheme: light)" srcset="${raw(`${block}-light.svg`)}">
-  <img alt="Tower defense battle animated over my GitHub contribution graph" src="${raw(`${block}.svg`)}">
+  <img alt="${reg().embedAlt || "Tower defense battle animated over my GitHub contribution graph"}" src="${raw(`${block}.svg`)}">
 </picture>`;
 }
 
@@ -630,11 +692,11 @@ function selectBlock(kind, id) {
   for (const b of $("side").querySelectorAll(".sideitem")) {
     b.setAttribute("aria-pressed", b.dataset.id === id);
   }
-  $("view-defense").hidden = kind !== "defense";
+  $("view-defense").hidden = kind !== "defense" && kind !== "life";
   $("view-habits").hidden = kind !== "habits";
   $("view-media").hidden = kind !== "media";
   updateHero(kind);
-  if (kind === "defense") {
+  if (kind === "defense" || kind === "life") {
     state.block = id;
     syncBlockUI();
     render();

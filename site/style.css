@@ -209,7 +209,6 @@ h1 .alt { color: var(--accent2); }
 /* ---- configurator ---- */
 .rig { display: flex; flex-direction: column; gap: 14px; }
 .frame {
-  border: 1px solid var(--line);
   border-radius: 12px;
   overflow: hidden;
   line-height: 0;
