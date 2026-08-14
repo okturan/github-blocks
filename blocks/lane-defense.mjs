@@ -172,7 +172,8 @@ export function laneDefense(grid, {
     }
   }
   const kills = enemies.filter((e) => e.death).length;
-  const leaked = enemies.length - kills;
+  // Only creeps that crossed the core count. Still-on-board leftovers are not leaks.
+  const leaked = leaks.length;
   const verdict = leaked === 0 ? "CLEAN SWEEP" : leaked < CORE_HP ? "CORE HELD" : "CORE BREACHED";
   const held = verdict !== "CORE BREACHED";
 
@@ -210,7 +211,7 @@ export function laneDefense(grid, {
     const xEnd = e.death ? e.death.x : (e.exitT ? e.x : -16 + (tEnd - e.t0) * e.v);
     if (!e.motion.length || e.motion[e.motion.length - 1][0] < tEnd - 0.02) e.motion.push([tEnd, xEnd]);
     const color = th.bugs[e.tier], r = [4, 4.6, 5.5][e.tier];
-    const leak = !e.death;
+    const leak = Boolean(e.exitT);
     const frames = [
       ["0", `opacity:0;transform:translate(-16px,${f(e.y)}px)`],
       [e.t0, `opacity:0;transform:translate(-16px,${f(e.y)}px)`],
