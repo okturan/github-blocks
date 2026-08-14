@@ -15,7 +15,7 @@ more blocks will land here as they get built.
 ## See them render
 
 These are committed outputs from the actual renderers, not mockups. Click any
-battle to open the configurator and generate the same kind of block for your
+graph block to open the configurator and generate the same kind of block for your
 own contribution graph.
 
 <p>
@@ -26,6 +26,9 @@ own contribution graph.
 </p>
 <p>
   <a href="https://okturan.github.io/github-blocks/"><img width="896" alt="Boss Fight pitting contribution cells against an animated snake boss" src="./examples/out/boss-fight.svg"></a>
+</p>
+<p>
+  <a href="https://okturan.github.io/github-blocks/#commit-life"><img width="896" alt="Commit Life running Conway's Game of Life on a GitHub contribution graph" src="./examples/out/commit-life.svg"></a>
 </p>
 <p>
   <a href="./examples/out/cinematic-strip.svg"><img width="896" alt="Cinematic Strip rendering three media covers as a wide profile card" src="./examples/out/cinematic-strip.svg"></a>
@@ -43,9 +46,10 @@ own contribution graph.
 | `media-list` | 896×340 | One panel, numbered rows; meta and score right-aligned. |
 | `classic-cards` | 878×220 | The original okturan layout: dark panel, small cover, title + meta. |
 | `coding-habits` | 896×300 | Scheduled analysis of the latest X indexed public, default-branch, non-merge commits. No LLM required. |
-| `lane-defense` | 896×169 | Animated tower defense over your contribution graph: big commit days are towers, bug waves march the weekday lanes. The renderer converts the simulation to CSS keyframes. The SVG contains no JavaScript. |
+| `lane-defense` | 896×169 | Animated tower defense over your contribution graph: big commit days are towers, the brightest are fortresses with splash, bug waves march the weekday lanes, and leaks hit a core on the right. The renderer converts the simulation to CSS keyframes. The SVG contains no JavaScript. |
 | `night-shift` | 896×169 | Creeps follow a serpentine road through the graph; towers near the road fire plasma bolts with real intercept leads. |
 | `boss-fight` | 896×169 | The snk snake returns as a boss and eats commit cells while every level-2+ day fires on it. Three endings: ROUT, LAST STAND, CONSUMED (the snake wins). |
+| `commit-life` | 896×169 | Conway's Game of Life on your contribution graph. Commit days start alive, empty days start dead. Generations bake into CSS keyframes. The SVG contains no JavaScript. |
 
 All 896-wide blocks fill GitHub's desktop README column (max ~896px) and scale
 down proportionally on narrower screens.
@@ -174,7 +178,25 @@ writeFileSync("dist/lane-defense.svg", svg);
 Difficulty is auto-balanced to the grid: level-3+ days garrison the graph
 (sparse profiles promote level-2 days, dense ones are thinned), and enemy HP
 scales with tower count, so PATROL is a clean sweep, SIEGE leaks a few, and
-OVERRUN ends badly on any profile.
+OVERRUN ends badly on any profile. Level-4 days are fortresses (longer range,
+double damage, splash). Hits slow their target. Leaks strike a core on the right.
+
+`commit-life` uses the same grid. Commit days start alive; empty days start dead.
+Classic B3/S23 runs on a bounded board, then every generation bakes into CSS.
+`seed` only tints cells born on days that were empty.
+
+```js
+import { commitLife } from "./blocks/commit-life.mjs";
+import { fetchContributionGrid } from "./lib/contrib.mjs";
+
+const grid = await fetchContributionGrid("okturan");
+const day = Math.floor(Date.now() / 86400000);
+const svg = commitLife(grid, {
+  seed: day,          // born-cell tint; the Life pattern comes from the graph
+  theme: "dark",      // or "light"
+});
+writeFileSync("dist/commit-life.svg", svg);
+```
 
 Render every block with sample data:
 
@@ -185,17 +207,18 @@ node examples/render-all.mjs   # writes examples/out/*.svg
 The verification workflow runs dependency-free Node behavior tests for GitHub
 contribution and recent-commit parsing, time-zone-aware habits analysis, XML
 and active-link safety, media-layout contracts, deterministic defense outcomes,
-and reduced-motion output. It then rerenders all nine examples and fails if the committed SVGs drift, if the README gallery
+and reduced-motion output. It then rerenders all eleven examples and fails if the committed SVGs drift, if the README gallery
 points at missing output, or if an output introduces executable script content.
 
-### Use the defense blocks without writing code
+### Use the graph blocks without writing code
 
 The [configurator](https://okturan.github.io/github-blocks/) generates a
 workflow that checks out this repo at a pinned commit and runs
 `action/generate.mjs` on GitHub's runners. No vendoring or hosting is needed. Config
-is all env vars: `BLOCK` (`lane-defense` / `night-shift` / `boss-fight`),
-`PROFILE_USER`, `LD_LEVEL` (1–3 or `rotate`; boss-fight reads them as endings),
-`LD_SEED` (int or `daily`), `LD_THEMES`, `LD_TITLE`, `LD_OUT`.
+is all env vars: `BLOCK` (`lane-defense` / `night-shift` / `boss-fight` / `commit-life`),
+`PROFILE_USER`, `LD_LEVEL` (1–3 or `rotate`; boss-fight reads them as endings;
+commit-life ignores level), `LD_SEED` (int or `daily`; for commit-life, seed only
+tints cells born on empty days), `LD_THEMES`, `LD_TITLE`, `LD_OUT`.
 
 ## Repo layout
 

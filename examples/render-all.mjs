@@ -10,6 +10,7 @@ import { classicCards } from "../blocks/classic-cards.mjs";
 import { laneDefense } from "../blocks/lane-defense.mjs";
 import { nightShift } from "../blocks/night-shift.mjs";
 import { bossFight } from "../blocks/boss-fight.mjs";
+import { commitLife } from "../blocks/commit-life.mjs";
 import { sampleContributionGrid } from "../lib/contrib.mjs";
 import { analyzeCodingHabits } from "../lib/habits.mjs";
 import { codingHabits } from "../blocks/coding-habits.mjs";
@@ -42,6 +43,8 @@ const blocks = {
   "lane-defense-light": laneDefense(grid, { level: 1, seed: 11, theme: "light" }),
   "night-shift": nightShift(grid, { level: 2, seed: 7 }),
   "boss-fight": bossFight(grid, { level: 2, seed: 7 }),
+  "commit-life": commitLife(grid, { seed: 7 }),
+  "commit-life-light": commitLife(grid, { seed: 7, theme: "light" }),
   "coding-habits": codingHabits(analyzeCodingHabits(habitsSample, { timeZone: "Europe/Istanbul" })),
 };
 

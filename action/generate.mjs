@@ -3,10 +3,12 @@
 // (the configurator generates a workflow that does exactly that). Config is
 // env vars; output is <block>.svg (dark) and <block>-light.svg in LD_OUT.
 //
-//   BLOCK         lane-defense | night-shift | boss-fight  (default lane-defense)
+//   BLOCK         lane-defense | night-shift | boss-fight | commit-life
+//                 (default lane-defense)
 //   PROFILE_USER  required — whose graph fights
 //   LD_LEVEL      1 | 2 | 3 | rotate   (default rotate: cycles daily;
-//                 for boss-fight the levels are endings: rout/last stand/consumed)
+//                 for boss-fight the levels are endings: rout/last stand/consumed;
+//                 commit-life ignores level)
 //   LD_SEED       integer | daily      (default daily)
 //   LD_THEMES     comma list of dark,light (default both)
 //   LD_TITLE      header text          (default per block)
@@ -16,12 +18,14 @@ import { join } from "node:path";
 import { laneDefense } from "../blocks/lane-defense.mjs";
 import { nightShift } from "../blocks/night-shift.mjs";
 import { bossFight } from "../blocks/boss-fight.mjs";
+import { commitLife } from "../blocks/commit-life.mjs";
 import { fetchContributionGrid } from "../lib/contrib.mjs";
 
 const BLOCKS = {
   "lane-defense": { fn: laneDefense, title: "COMMIT DEFENSE" },
   "night-shift": { fn: nightShift, title: "NIGHT SHIFT" },
   "boss-fight": { fn: bossFight, title: "BOSS FIGHT" },
+  "commit-life": { fn: commitLife, title: "COMMIT LIFE" },
 };
 
 const blockName = process.env.BLOCK || "lane-defense";

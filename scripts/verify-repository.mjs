@@ -17,7 +17,7 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-assert(outputNames.length === 9, `Expected nine rendered examples, found ${outputNames.length}`);
+assert(outputNames.length === 11, `Expected eleven rendered examples, found ${outputNames.length}`);
 
 for (const name of outputNames) {
   const svg = await readFile(join(outputDirectory, name), "utf8");
@@ -32,12 +32,27 @@ for (const name of outputNames) {
 
 const galleryOutputs = [...readme.matchAll(/src="\.\/examples\/out\/([^"/]+\.svg)"/g)]
   .map((match) => match[1]);
-assert(galleryOutputs.length === 5, `Expected five README gallery outputs, found ${galleryOutputs.length}`);
+assert(galleryOutputs.length === 6, `Expected six README gallery outputs, found ${galleryOutputs.length}`);
 assert(new Set(galleryOutputs).size === galleryOutputs.length, "README gallery outputs must be unique");
 for (const name of galleryOutputs) {
   assert(outputNames.includes(name), `README gallery references missing output: ${name}`);
 }
 
+assert(outputNames.includes("commit-life.svg"), "examples/out is missing commit-life.svg");
+assert(outputNames.includes("commit-life-light.svg"), "examples/out is missing commit-life-light.svg");
+assert(
+  /data-kind="life" data-id="commit-life"/.test(siteHtml),
+  "Configurator sidebar is missing the commit-life block",
+);
+assert(/id="ship-verb"/.test(siteHtml), "Configurator ship lede cannot be updated per block");
+assert(
+  /id="how-bake"/.test(siteHtml) && /id="how-det"/.test(siteHtml) && /id="how-extra"/.test(siteHtml),
+  "Configurator how-it-works facts cannot be updated per block",
+);
+assert(
+  /import \{ commitLife \} from "\.\/blocks\/commit-life\.mjs"/.test(siteApp),
+  "Configurator does not import the commit-life renderer",
+);
 assert(
   /data-kind="habits" data-id="coding-habits"/.test(siteHtml),
   "Configurator sidebar is missing the coding-habits block",
@@ -53,7 +68,7 @@ assert(
   /fetchRecentPublicCommits/.test(siteApp) && /analyzeCodingHabits/.test(siteApp),
   "Configurator does not load and analyze recent commits",
 );
-for (const kind of ["defense", "habits", "media"]) {
+for (const kind of ["defense", "habits", "media", "life"]) {
   assert(new RegExp(`\\b${kind}: \\{`).test(siteApp), `Configurator hero is missing ${kind} copy`);
 }
 assert(/updateHero\(kind\)/.test(siteApp), "Configurator does not update the hero when a block is selected");
