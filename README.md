@@ -5,9 +5,10 @@ data in, a self-contained SVG string out. Generate the SVG in CI, commit it to
 an output branch, embed it in the README with a plain `<img>`.
 
 **Configurator: <https://okturan.github.io/github-blocks/>** lets you preview
-every block and copy the code needed to add one to a profile. Activity blocks
-include a scheduled workflow. Anime blocks include a Node script. The site
-uses the same renderers as this repository.
+every block and copy the code needed to add one to a profile. Graph games
+(tower defense and Commit Life) and activity blocks include a scheduled
+workflow. Anime blocks include a Node script. The site uses the same
+renderers as this repository.
 
 Started with the anime section of [okturan/okturan](https://github.com/okturan/okturan);
 more blocks will land here as they get built.
@@ -19,13 +20,13 @@ graph block to open the configurator and generate the same kind of block for you
 own contribution graph.
 
 <p>
-  <a href="https://okturan.github.io/github-blocks/"><img width="896" alt="Lane Defense animating a tower-defense battle over a GitHub contribution graph" src="./examples/out/lane-defense.svg"></a>
+  <a href="https://okturan.github.io/github-blocks/#lane-defense"><img width="896" alt="Lane Defense: fortress days splash, bug waves march the weekday lanes, leaks hit a core" src="./examples/out/lane-defense.svg"></a>
 </p>
 <p>
-  <a href="https://okturan.github.io/github-blocks/"><img width="896" alt="Night Shift routing enemies through a contribution graph while nearby towers fire" src="./examples/out/night-shift.svg"></a>
+  <a href="https://okturan.github.io/github-blocks/#night-shift"><img width="896" alt="Night Shift routing enemies through a contribution graph while nearby towers fire" src="./examples/out/night-shift.svg"></a>
 </p>
 <p>
-  <a href="https://okturan.github.io/github-blocks/"><img width="896" alt="Boss Fight pitting contribution cells against an animated snake boss" src="./examples/out/boss-fight.svg"></a>
+  <a href="https://okturan.github.io/github-blocks/#boss-fight"><img width="896" alt="Boss Fight pitting contribution cells against an animated snake boss" src="./examples/out/boss-fight.svg"></a>
 </p>
 <p>
   <a href="https://okturan.github.io/github-blocks/#commit-life"><img width="896" alt="Commit Life running Conway's Game of Life on a GitHub contribution graph" src="./examples/out/commit-life.svg"></a>
@@ -198,6 +199,16 @@ const svg = commitLife(grid, {
 writeFileSync("dist/commit-life.svg", svg);
 ```
 
+Embed the two generated themes the same way as the other graph blocks:
+
+```html
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/USER/USER/output/commit-life.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/USER/USER/output/commit-life-light.svg">
+  <img alt="Conway's Game of Life on my GitHub contribution graph" src="https://raw.githubusercontent.com/USER/USER/output/commit-life.svg">
+</picture>
+```
+
 Render every block with sample data:
 
 ```sh
@@ -206,9 +217,10 @@ node examples/render-all.mjs   # writes examples/out/*.svg
 
 The verification workflow runs dependency-free Node behavior tests for GitHub
 contribution and recent-commit parsing, time-zone-aware habits analysis, XML
-and active-link safety, media-layout contracts, deterministic defense outcomes,
-and reduced-motion output. It then rerenders all eleven examples and fails if the committed SVGs drift, if the README gallery
-points at missing output, or if an output introduces executable script content.
+and active-link safety, media-layout contracts, deterministic defense and Life
+outcomes, and reduced-motion output. It then rerenders all eleven examples and
+fails if the committed SVGs drift, if the README gallery points at missing
+output, or if an output introduces executable script content.
 
 ### Use the graph blocks without writing code
 
@@ -223,7 +235,7 @@ tints cells born on empty days), `LD_THEMES`, `LD_TITLE`, `LD_OUT`.
 ## Repo layout
 
 - `blocks/`: renderers written as dependency-free ESM for Node and browsers
-- `lib/`: shared helpers, the defense simulation, and GitHub data fetching
+- `lib/`: shared helpers, the defense and Life simulation, and GitHub data fetching
 - `action/`: CI entry points for profile workflows
 - `site/`: the configurator deployed by `.github/workflows/pages.yml`
 - `examples/`: committed sample output from `node examples/render-all.mjs`
