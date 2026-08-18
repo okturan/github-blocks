@@ -77,6 +77,11 @@ for (const kind of ["defense", "habits", "media", "life"]) {
   assert(new RegExp(`\\b${kind}: \\{`).test(siteApp), `Configurator hero is missing ${kind} copy`);
 }
 assert(/updateHero\(kind\)/.test(siteApp), "Configurator does not update the hero when a block is selected");
+assert(/id="dl-mp4"/.test(siteHtml), "Configurator is missing the MP4 export button");
+assert(
+  /exportSvgLoopToMp4/.test(siteApp) && /id="dl-mp4"/.test(siteHtml),
+  "Configurator does not wire MP4 export",
+);
 for (const [name, content] of [["README.md", readme], ["site/index.html", siteHtml], ["site/app.mjs", siteApp]]) {
   assert(!content.includes("—"), `${name} contains an em dash`);
 }

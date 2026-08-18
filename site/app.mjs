@@ -12,6 +12,7 @@ import { classicCards } from "./blocks/classic-cards.mjs";
 import { codingHabits } from "./blocks/coding-habits.mjs";
 import { analyzeCodingHabits } from "./lib/habits.mjs";
 import { fetchRecentPublicCommits } from "./lib/github-commits.mjs";
+import { canEncodeMp4, exportSvgLoopToMp4 } from "./export-mp4.mjs";
 
 const $ = (id) => document.getElementById(id);
 const DAY = Math.floor(Date.now() / 86_400_000);
@@ -331,6 +332,74 @@ function download(theme) {
   a.download = theme === "dark" ? `${state.block}.svg` : `${state.block}-light.svg`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+const MP4_NOTE_READY = "Chrome and Edge can encode one full loop of this preview as a silent H.264 file. The file matches the current theme, title, seed, and range rings.";
+const MP4_NOTE_UNSUPPORTED = "This browser cannot encode H.264. Open this page in Chrome or Edge.";
+let mp4Busy = false;
+
+function setMp4IdleState() {
+  const button = $("dl-mp4");
+  const note = $("mp4-note");
+  if (!button || !note) return;
+  button.textContent = "EXPORT MP4";
+  if (!canEncodeMp4()) {
+    button.disabled = true;
+    note.textContent = MP4_NOTE_UNSUPPORTED;
+    return;
+  }
+  button.disabled = mp4Busy;
+  if (!mp4Busy) note.textContent = MP4_NOTE_READY;
+}
+
+async function exportMp4() {
+  const button = $("dl-mp4");
+  const note = $("mp4-note");
+  if (mp4Busy) return;
+  if (!canEncodeMp4()) {
+    note.textContent = MP4_NOTE_UNSUPPORTED;
+    button.disabled = true;
+    return;
+  }
+  const duration = state.stats?.duration;
+  const svgText = rendered[state.theme];
+  if (!svgText || !Number.isFinite(duration) || duration <= 0) {
+    note.classList.add("error");
+    note.textContent = "This preview has no timed loop to export.";
+    return;
+  }
+
+  mp4Busy = true;
+  button.disabled = true;
+  note.classList.remove("error");
+  note.textContent = "Encoding the loop.";
+  try {
+    const filename = state.theme === "light" ? `${state.block}-light.mp4` : `${state.block}.mp4`;
+    button.setAttribute("aria-busy", "true");
+    const buffer = await exportSvgLoopToMp4({
+      svgText,
+      theme: state.theme,
+      durationSec: duration,
+      onProgress: (done, total) => {
+        note.textContent = `Encoding frame ${done} / ${total}`;
+        button.textContent = `FRAME ${done}/${total}`;
+      },
+    });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([buffer], { type: "video/mp4" }));
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    note.textContent = `Saved ${filename}.`;
+  } catch (error) {
+    note.classList.add("error");
+    note.textContent = error instanceof Error ? error.message : "MP4 export failed.";
+  } finally {
+    mp4Busy = false;
+    button.textContent = "EXPORT MP4";
+    button.removeAttribute("aria-busy");
+    button.disabled = !canEncodeMp4();
+  }
 }
 
 // -------------------------------------------------------------- coding habits
@@ -830,6 +899,8 @@ for (const btn of document.querySelectorAll("button.copy")) {
 
 $("dl-dark").addEventListener("click", () => download("dark"));
 $("dl-light").addEventListener("click", () => download("light"));
+$("dl-mp4").addEventListener("click", () => exportMp4());
+setMp4IdleState();
 
 // ----------------------------------------------------------------------- boot
 
