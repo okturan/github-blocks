@@ -8,7 +8,8 @@ an output branch, embed it in the README with a plain `<img>`.
 every block and copy the code needed to add one to a profile. Graph games
 (tower defense and Commit Life) and activity blocks include a scheduled
 workflow. Anime blocks include a Node script. The site uses the same
-renderers as this repository.
+renderers as this repository. The DOWNLOAD tab can save the current graph
+block as SVG. Chrome and Edge can also export one silent H.264 loop.
 
 Started with the anime section of [okturan/okturan](https://github.com/okturan/okturan);
 more blocks will land here as they get built.
