@@ -37,6 +37,7 @@ export function nightShift(grid, {
   theme = "dark",
   title = "NIGHT SHIFT",
   width = 896,
+  rangeRings = true,
   onStats,
 } = {}) {
   if (!Array.isArray(grid) || !grid.length || grid[0].length !== ROWS) {
@@ -128,7 +129,9 @@ export function nightShift(grid, {
   doc.raw(`<path d="${d}" fill="none" stroke="${th.road[1]}" stroke-width="1" stroke-dasharray="3 5" stroke-linejoin="round"/>`);
   drawCells(doc, grid, th.pal);
   towerMarkers(doc, towers, th.ring, th.turret);
-  for (const tw of towers) doc.el("circle", { cx: tw.x, cy: tw.y, r: RANGE, fill: "none", stroke: th.boltGlow, "stroke-opacity": 0.07 });
+  if (rangeRings) {
+    for (const tw of towers) doc.el("circle", { cx: tw.x, cy: tw.y, r: RANGE, fill: "none", stroke: th.boltGlow, "stroke-opacity": 0.07 });
+  }
   muzzles(doc, towers, th.muzzle);
   doc.els.push(...boltEls);
 

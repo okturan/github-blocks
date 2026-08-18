@@ -176,6 +176,20 @@ test("commit life HighLife rule is deterministic and diverges from classic", () 
   assert.doesNotMatch(svg, /<script\b|javascript:/i);
 });
 
+test("range rings can be omitted without changing battle stats", () => {
+  const grid = sampleContributionGrid(7);
+  let withRings, withoutRings;
+  const on = laneDefense(grid, { level: 2, seed: 7, onStats: (value) => { withRings = value; } });
+  const off = laneDefense(grid, { level: 2, seed: 7, rangeRings: false, onStats: (value) => { withoutRings = value; } });
+  assert.deepEqual(withRings, withoutRings);
+  assert.match(on, /stroke-opacity="0.08"/);
+  assert.doesNotMatch(off, /stroke-opacity="0.08"/);
+  const nightOn = nightShift(grid, { level: 2, seed: 7 });
+  const nightOff = nightShift(grid, { level: 2, seed: 7, rangeRings: false });
+  assert.match(nightOn, /stroke-opacity="0.07"/);
+  assert.doesNotMatch(nightOff, /stroke-opacity="0.07"/);
+});
+
 test("defense renderers reject empty or malformed contribution grids", () => {
   for (const render of [laneDefense, nightShift, bossFight, commitLife]) {
     assert.throws(() => render([]), /grid must be weeks/);

@@ -50,6 +50,7 @@ const REGISTRY = {
     alt: "Tower defense preview: bug waves march the weekday rows while fortress days splash and a core on the right takes leaks",
     howName: "How Lane Defense plays",
     how: "Bugs spawn in waves and march the weekday rows. Red bugs are scouts, orange bugs are soldiers, and purple bugs are tanks with a health bar. Each wave ends with a tank. The brightest commit days are fortresses: longer range, double damage, and splash. Hits slow whatever they catch. Leaks strike the core on the right. PATROL is a clean sweep, SIEGE holds the core with a few leaks, and OVERRUN breaches it.",
+    hasRangeRings: true,
   },
   "night-shift": {
     fn: nightShift,
@@ -62,6 +63,7 @@ const REGISTRY = {
     alt: "Tower defense preview: creeps follow a winding road through the graph while towers fire plasma bolts",
     howName: "How Night Shift plays",
     how: "Creeps follow a road across Monday, back through Wednesday, and out through Friday. The first creep absorbs fire while the pack advances. Towers near the road aim 0.22 seconds ahead, so each bolt lands where its target will be.",
+    hasRangeRings: true,
   },
   "boss-fight": {
     fn: bossFight,
@@ -108,6 +110,7 @@ const state = {
   seedMode: "daily", // "daily" | "fixed"
   seed: DAY,
   theme: "dark",
+  rangeRings: true,
   title: "COMMIT DEFENSE",
   titleDirty: false,
   stats: null,
@@ -159,7 +162,12 @@ function effectiveSeed() { return state.seedMode === "daily" ? DAY : state.seed;
 function reg() { return REGISTRY[state.block]; }
 
 function render() {
-  const opts = { level: effectiveLevel(), seed: effectiveSeed(), title: state.title || reg().defaultTitle };
+  const opts = {
+    level: effectiveLevel(),
+    seed: effectiveSeed(),
+    title: state.title || reg().defaultTitle,
+    rangeRings: state.rangeRings,
+  };
   for (const theme of ["dark", "light"]) {
     rendered[theme] = reg().fn(state.grid, { ...opts, theme, onStats: (s) => { if (theme === state.theme) state.stats = s; } });
   }
@@ -208,6 +216,7 @@ function render() {
 function syncBlockUI() {
   const r = reg();
   $("control-level").hidden = !!r.noLevel;
+  $("control-range").hidden = !r.hasRangeRings;
   $("how-balance").hidden = !!r.noLevel && !r.howExtra;
   $("seed-label").textContent = r.seedLabel || "Battle seed";
   $("title-hint").textContent = r.titleHint || "Battle stats get appended after the title.";
@@ -251,6 +260,9 @@ function renderSnippets() {
   }
   envLines.push(`          LD_SEED: ${yamlQuote(seed)} # ${r.noLevel ? "daily = new born-cell tints every run" : "daily = new battle every run"}`);
   envLines.push(`          LD_TITLE: ${yamlQuote(state.title || r.defaultTitle)}`);
+  if (r.hasRangeRings) {
+    envLines.push(`          LD_RANGE_RINGS: ${yamlQuote(state.rangeRings ? "on" : "off")} # on | off`);
+  }
   const cronNote = r.cronNote || "daily; rotates the battle";
   const stepName = r.workflowStep || "Simulate today's battle";
   const commitMsg = r.workflowCommit || `Update ${block} battle`;
@@ -744,6 +756,14 @@ $("seed-reroll").addEventListener("click", () => {
   state.seed = Math.floor(Math.random() * 1_000_000);
   $("seed-daily").setAttribute("aria-pressed", "false");
   $("seed-reroll").setAttribute("aria-pressed", "true");
+  render();
+});
+
+$("rangeseg").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-range]");
+  if (!btn) return;
+  state.rangeRings = btn.dataset.range !== "off";
+  for (const b of $("rangeseg").querySelectorAll("button")) b.setAttribute("aria-pressed", b === btn);
   render();
 });
 
