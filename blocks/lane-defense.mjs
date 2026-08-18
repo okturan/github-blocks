@@ -76,11 +76,11 @@ function bugMark(tier, color) {
     `<path d="M-2.2 3.3 L-4.4 5.1 M0.4 3.5 L-0.6 5.2" fill="none" stroke="${color}" stroke-width="0.95" stroke-linecap="round"/>`;
 }
 
-function drawTurret(doc, tw, th) {
+function drawTurret(doc, tw, th, rangeRings) {
   const fortress = tw.lvl >= 4;
   const r = fortress ? 3.55 : tw.lvl >= 3 ? 3.15 : 2.75;
   const fill = fortress ? th.laser : th.turret;
-  if (fortress) {
+  if (rangeRings && fortress) {
     doc.el("circle", { cx: tw.x, cy: tw.y, r: tw.range, fill: "none", stroke: th.laser, "stroke-opacity": 0.08 });
     doc.el("circle", { cx: tw.x, cy: tw.y, r: f(r + 2.3), fill: "none", stroke: th.laser, "stroke-width": 0.85, "stroke-opacity": 0.45 });
   }
@@ -98,6 +98,7 @@ export function laneDefense(grid, {
   theme = "dark",
   title = "COMMIT DEFENSE",
   width = 896,
+  rangeRings = true,
   onStats,
 } = {}) {
   if (!Array.isArray(grid) || !grid.length || grid[0].length !== ROWS) {
@@ -202,7 +203,7 @@ export function laneDefense(grid, {
     `<rect width="6" height="${f(ch)}" rx="1.6" fill="#ffffff" style="${doc.anim(coreFlash, "opacity:0")}"/>` +
     `</g>`);
 
-  for (const tw of towers) drawTurret(doc, tw, th);
+  for (const tw of towers) drawTurret(doc, tw, th, rangeRings);
   muzzles(doc, towers, th.muzzle);
   doc.els.push(...fx);
 

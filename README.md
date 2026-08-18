@@ -230,7 +230,8 @@ workflow that checks out this repo at a pinned commit and runs
 is all env vars: `BLOCK` (`lane-defense` / `night-shift` / `boss-fight` / `commit-life`),
 `PROFILE_USER`, `LD_LEVEL` (1–3 or `rotate`; boss-fight reads them as endings;
 commit-life ignores level), `LD_SEED` (int or `daily`; for commit-life, seed only
-tints cells born on empty days), `LD_THEMES`, `LD_TITLE`, `LD_OUT`.
+tints cells born on empty days), `LD_THEMES`, `LD_TITLE`, `LD_RANGE_RINGS`
+(`on` or `off`; hides fortress and tower range circles), `LD_OUT`.
 
 ## Repo layout
 

@@ -12,6 +12,7 @@
 //   LD_SEED       integer | daily      (default daily)
 //   LD_THEMES     comma list of dark,light (default both)
 //   LD_TITLE      header text          (default per block)
+//   LD_RANGE_RINGS on | off            (default on; lane-defense + night-shift)
 //   LD_OUT        output directory     (default dist)
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -47,6 +48,8 @@ const seedEnv = process.env.LD_SEED || "daily";
 const seed = seedEnv === "daily" ? day : (+seedEnv >>> 0);
 const themes = (process.env.LD_THEMES || "dark,light").split(",").map((t) => t.trim()).filter(Boolean);
 const title = process.env.LD_TITLE || block.title;
+const rangeEnv = (process.env.LD_RANGE_RINGS || "on").trim().toLowerCase();
+const rangeRings = !["0", "off", "false", "no"].includes(rangeEnv);
 const outDir = process.env.LD_OUT || "dist";
 
 const grid = await fetchContributionGrid(user);
@@ -54,7 +57,7 @@ mkdirSync(outDir, { recursive: true });
 for (const theme of themes) {
   const file = theme === "dark" ? `${blockName}.svg` : `${blockName}-${theme}.svg`;
   const svg = block.fn(grid, {
-    level, seed, theme, title,
+    level, seed, theme, title, rangeRings,
     onStats: (s) => console.log(`${file}: ${user} lvl ${level} seed ${seed} —`, JSON.stringify(s)),
   });
   writeFileSync(join(outDir, file), svg);
