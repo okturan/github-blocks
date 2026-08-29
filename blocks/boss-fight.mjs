@@ -72,8 +72,10 @@ export function bossFight(grid, {
       potential.push({ t, tw, hx, hy });
     }
   }
-  const snakeWins = ending.frac > 1;
-  const maxHP = snakeWins ? Math.ceil(potential.length * 1.35) : Math.max(1, Math.ceil(potential.length * ending.frac));
+  // A graph with no fortified days never fires a shot, so no ending that kills
+  // the snake is reachable: it eats the graph whichever one was asked for.
+  const snakeWins = ending.frac > 1 || !potential.length;
+  const maxHP = Math.max(1, Math.ceil(potential.length * (snakeWins ? 1.35 : ending.frac)));
   const landed = snakeWins ? potential : potential.slice(0, maxHP);
   const deathT = snakeWins ? null : landed[landed.length - 1].t;
   const endT = snakeWins ? tExit : deathT;
@@ -164,7 +166,7 @@ export function bossFight(grid, {
     ["0", "opacity:0"], [endT + 0.6, "opacity:0"], [endT + 0.9, "opacity:1"], [D - 0.5, "opacity:1"], [D - 0.1, "opacity:0"], ["100", "opacity:0"],
   ], "opacity:0")}">${verdict}</text>`);
 
-  onStats?.({ towers: towers.length, bossHP: maxHP, hits: landed.length, ending: ending.name, duration: D });
+  onStats?.({ towers: towers.length, bossHP: maxHP, hits: landed.length, ending: snakeWins ? "CONSUMED" : ending.name, duration: D });
 
   return defenseShell({
     doc, theme: th, cols, title, width,
