@@ -50,7 +50,7 @@ const REGISTRY = {
     fixedHint: (name) => `Fixed at ${name} on every regeneration.`,
     alt: "Tower defense preview: bug waves march the weekday rows while fortress days splash and a core on the right takes leaks",
     howName: "How Lane Defense plays",
-    how: "Bugs spawn in waves and march the weekday rows. Red bugs are scouts, orange bugs are soldiers, and purple bugs are tanks with a health bar. Each wave ends with a tank. The brightest commit days are fortresses: longer range, double damage, and splash. Hits slow whatever they catch. Leaks strike the core on the right. PATROL is a clean sweep, SIEGE holds the core with a few leaks, and OVERRUN breaches it.",
+    how: "Bugs spawn in waves and march the weekday rows. Red bugs are scouts, orange bugs are soldiers, and purple bugs are tanks with a health bar. Each wave ends with a tank. The brightest commit days are fortresses: longer range, double damage, and splash. Hits slow whatever they catch. Leaks strike the core on the right, which is sized to the wave it faces, so the meter drains across the whole battle. PATROL is a clean sweep, SIEGE holds the core with a few leaks, and OVERRUN comes down to the last wave.",
     hasRangeRings: true,
   },
   "night-shift": {

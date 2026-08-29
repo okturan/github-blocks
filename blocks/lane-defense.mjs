@@ -5,13 +5,13 @@
 import {
   BASE_THEMES, PITCH, ROWS, f, cellY, gridWidth, mulberry32,
   makeDoc, beam, burst, ringPulse, hitFlash, drawCells, muzzles,
-  pickTowers, hpScale, defenseShell,
+  pickTowers, hpScale, towerPower, defenseShell,
 } from "../lib/engine.mjs";
 
 export const LEVELS = [
   { name: "PATROL", waves: 3, perWave: 5, waveGap: 7, hp: [2, 3, 6], speed: [42, 60], cooldown: 1.55, mix: [0.55, 0.85] },
-  { name: "SIEGE", waves: 4, perWave: 6, waveGap: 7.5, hp: [6, 9, 15], speed: [46, 64], cooldown: 1.85, mix: [0.4, 0.7] },
-  { name: "OVERRUN", waves: 5, perWave: 7, waveGap: 8, hp: [8, 12, 20], speed: [50, 70], cooldown: 2.0, mix: [0.3, 0.58] },
+  { name: "SIEGE", waves: 4, perWave: 6, waveGap: 7.5, hp: [5, 8, 14], speed: [46, 64], cooldown: 1.82, mix: [0.4, 0.7] },
+  { name: "OVERRUN", waves: 5, perWave: 7, waveGap: 8, hp: [6, 9, 15], speed: [46, 64], cooldown: 1.75, mix: [0.34, 0.64] },
 ];
 
 const ACCENTS = {
@@ -29,7 +29,10 @@ const ACCENTS = {
   },
 };
 
-const RANGE = 50, DT = 0.05, SLOW = 0.52, SLOW_DUR = 0.42, CORE_HP = 8;
+const RANGE = 50, DT = 0.05, SLOW = 0.52, SLOW_DUR = 0.42;
+// The core is sized to the wave it faces, so the bar drains over the whole
+// battle instead of bottoming out mid-loop and ignoring every later leak.
+const coreHP = (waveSize) => Math.max(5, Math.round(waveSize * 0.34));
 const TIER_SPEED = [1.28, 1, 0.86];
 
 function arm(tw) {
@@ -110,7 +113,7 @@ export function laneDefense(grid, {
   const GW = gridWidth(grid.length);
 
   const towers = pickTowers(grid).map(arm);
-  const scale = hpScale(towers.length);
+  const scale = hpScale(towerPower(towers), 20);
 
   const enemies = [];
   for (let w = 0; w < cfg.waves; w++) for (let i = 0; i < cfg.perWave; i++) {
@@ -175,7 +178,8 @@ export function laneDefense(grid, {
   const kills = enemies.filter((e) => e.death).length;
   // Only creeps that crossed the core count. Still-on-board leftovers are not leaks.
   const leaked = leaks.length;
-  const verdict = leaked === 0 ? "CLEAN SWEEP" : leaked < CORE_HP ? "CORE HELD" : "CORE BREACHED";
+  const core = coreHP(enemies.length);
+  const verdict = leaked === 0 ? "CLEAN SWEEP" : leaked < core ? "CORE HELD" : "CORE BREACHED";
   const held = verdict !== "CORE BREACHED";
 
   const fx = doc.lift();
@@ -189,10 +193,10 @@ export function laneDefense(grid, {
   const ch = ROWS * PITCH;
   const hpFrames = [["0", "transform:scaleY(1)"]];
   leaks.forEach((lt, i) => {
-    hpFrames.push([lt - 0.01, `transform:scaleY(${Math.max(0, (CORE_HP - i) / CORE_HP).toFixed(4)})`]);
-    hpFrames.push([lt + 0.06, `transform:scaleY(${Math.max(0, (CORE_HP - i - 1) / CORE_HP).toFixed(4)})`]);
+    hpFrames.push([lt - 0.01, `transform:scaleY(${Math.max(0, (core - i) / core).toFixed(4)})`]);
+    hpFrames.push([lt + 0.06, `transform:scaleY(${Math.max(0, (core - i - 1) / core).toFixed(4)})`]);
   });
-  const coreLeft = Math.max(0, (CORE_HP - leaks.length) / CORE_HP);
+  const coreLeft = Math.max(0, (core - leaks.length) / core);
   hpFrames.push(["100", `transform:scaleY(${coreLeft.toFixed(4)})`]);
   const coreFlash = [["0", "opacity:0"]];
   for (const lt of leaks) coreFlash.push([lt - 0.01, "opacity:0"], [lt, "opacity:0.85"], [lt + 0.22, "opacity:0"]);
@@ -263,11 +267,11 @@ export function laneDefense(grid, {
     ["0", "opacity:0"], [endT + 0.55, "opacity:0"], [endT + 0.9, "opacity:1"], [D - 0.55, "opacity:1"], [D - 0.12, "opacity:0"], ["100", "opacity:0"],
   ], "opacity:0")}">${verdict}</text>`);
 
-  onStats?.({ towers: towers.length, enemies: enemies.length, kills, leaked, duration: D, verdict });
+  onStats?.({ towers: towers.length, enemies: enemies.length, kills, leaked, core, duration: D, verdict });
 
   return defenseShell({
     doc, theme: th, cols: grid.length, title, width,
-    subtitle: `LVL ${level} ${cfg.name} · ${kills}/${enemies.length} DOWN · ${verdict}`,
-    ariaLabel: `Tower defense over a GitHub contribution graph: towers on big commit days shoot lasers at ${enemies.length} bug creeps marching along the weekday rows; ${kills} destroyed, ${leaked} slip through; ${verdict.toLowerCase()}`,
+    subtitle: `LVL ${level} ${cfg.name} · ${kills}/${enemies.length} DOWN · ${leaked}/${core} CORE HITS · ${verdict}`,
+    ariaLabel: `Tower defense over a GitHub contribution graph: towers on big commit days shoot lasers at ${enemies.length} bug creeps marching along the weekday rows; ${kills} destroyed, ${leaked} slip through and strike a core that withstands ${core}; ${verdict.toLowerCase()}`,
   });
 }

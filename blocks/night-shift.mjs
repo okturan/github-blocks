@@ -11,7 +11,7 @@ import {
 export const LEVELS = [
   { name: "PATROL", waves: 2, perWave: 6, waveGap: 11, hp: [4, 6, 9], speed: [95, 120], cooldown: 1.35, mix: [0.55, 0.85] },
   { name: "SIEGE", waves: 2, perWave: 9, waveGap: 13, hp: [7, 11, 16], speed: [95, 120], cooldown: 1.7, mix: [0.5, 0.8] },
-  { name: "OVERRUN", waves: 3, perWave: 9, waveGap: 12, hp: [9, 14, 20], speed: [100, 125], cooldown: 1.8, mix: [0.4, 0.7] },
+  { name: "OVERRUN", waves: 3, perWave: 9, waveGap: 12, hp: [7, 11, 17], speed: [96, 122], cooldown: 1.62, mix: [0.44, 0.74] },
 ];
 
 const ACCENTS = {

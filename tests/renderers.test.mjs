@@ -11,6 +11,7 @@ import { mediaList } from "../blocks/media-list.mjs";
 import { nightShift } from "../blocks/night-shift.mjs";
 import { posterCards } from "../blocks/poster-cards.mjs";
 import { sampleContributionGrid } from "../lib/contrib.mjs";
+import { ROWS } from "../lib/engine.mjs";
 import { analyzeCodingHabits } from "../lib/habits.mjs";
 import { safeHref, safeId, xml } from "../lib/helpers.mjs";
 
@@ -106,14 +107,14 @@ test("lane and road difficulty levels retain their reference outcomes", () => {
   const grid = sampleContributionGrid(7);
   const expected = {
     lane: [
-      { towers: 22, enemies: 15, kills: 15, leaked: 0, duration: 45, verdict: "CLEAN SWEEP" },
-      { towers: 22, enemies: 24, kills: 18, leaked: 6, duration: 52, verdict: "CORE HELD" },
-      { towers: 22, enemies: 35, kills: 15, leaked: 20, duration: 60, verdict: "CORE BREACHED" },
+      { towers: 22, enemies: 15, kills: 15, leaked: 0, core: 5, duration: 45, verdict: "CLEAN SWEEP" },
+      { towers: 22, enemies: 24, kills: 18, leaked: 6, core: 8, duration: 52, verdict: "CORE HELD" },
+      { towers: 22, enemies: 35, kills: 21, leaked: 14, core: 12, duration: 62, verdict: "CORE BREACHED" },
     ],
     night: [
       { towers: 22, enemies: 12, kills: 12, leaked: 0, duration: 43 },
       { towers: 22, enemies: 18, kills: 17, leaked: 1, duration: 46 },
-      { towers: 22, enemies: 27, kills: 10, leaked: 17, duration: 56 },
+      { towers: 22, enemies: 27, kills: 17, leaked: 10, duration: 57 },
     ],
   };
 
@@ -127,6 +128,27 @@ test("lane and road difficulty levels retain their reference outcomes", () => {
         assert.match(svg, new RegExp(stats.verdict));
       }
     }
+  }
+});
+
+test("the core is sized to the wave and plain graphs are not written off", () => {
+  const grid = sampleContributionGrid(7);
+  for (const level of [1, 2, 3]) {
+    let stats;
+    laneDefense(grid, { level, seed: 7, onStats: (value) => { stats = value; } });
+    assert.equal(stats.core, Math.max(5, Math.round(stats.enemies * 0.34)));
+    // A core fixed at 8 ignored every leak past the eighth; sizing it to the
+    // wave keeps the meter meaningful for the whole battle.
+    assert.ok(stats.leaked <= stats.core + 3, `level ${level} overran its core by ${stats.leaked - stats.core}`);
+  }
+
+  // No level-4 days: every tower is a plain one, so waves balanced on tower
+  // count alone used to breach this graph 100% of the time at SIEGE.
+  const plain = grid.map((week) => week.map((lvl) => (lvl >= 3 ? 3 : lvl)));
+  for (const seed of [1, 7, 42, 1337]) {
+    let stats;
+    laneDefense(plain, { level: 2, seed, onStats: (value) => { stats = value; } });
+    assert.equal(stats.verdict, "CORE HELD", `seed ${seed} leaked ${stats.leaked}/${stats.core}`);
   }
 });
 
@@ -188,6 +210,26 @@ test("range rings can be omitted without changing battle stats", () => {
   const nightOff = nightShift(grid, { level: 2, seed: 7, rangeRings: false });
   assert.match(nightOn, /stroke-opacity="0.07"/);
   assert.doesNotMatch(nightOff, /stroke-opacity="0.07"/);
+});
+
+test("a graph with nothing to defend renders instead of crashing", () => {
+  // A new account, or a quiet year: no day reaches level 2, so no tower fires.
+  const bare = Array.from({ length: 53 }, () => Array(ROWS).fill(0));
+  const almost = bare.map((week, w) => week.map((_, d) => (w === 10 && d === 3 ? 1 : 0)));
+
+  for (const grid of [bare, almost]) {
+    for (const level of [1, 2, 3]) {
+      for (const render of [laneDefense, nightShift, bossFight, commitLife]) {
+        const svg = render(grid, { level, seed: 7 });
+        assert.match(svg, /<svg [^>]*viewBox=/);
+        assert.doesNotMatch(svg, /NaN|undefined/);
+      }
+      // No shot can land, so no ending that kills the snake is reachable.
+      let stats;
+      bossFight(grid, { level, seed: 7, onStats: (value) => { stats = value; } });
+      assert.deepEqual([stats.towers, stats.hits, stats.ending], [0, 0, "CONSUMED"]);
+    }
+  }
 });
 
 test("defense renderers reject empty or malformed contribution grids", () => {

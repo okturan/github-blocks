@@ -179,9 +179,12 @@ writeFileSync("dist/lane-defense.svg", svg);
 
 Difficulty is auto-balanced to the grid: level-3+ days garrison the graph
 (sparse profiles promote level-2 days, dense ones are thinned), and enemy HP
-scales with tower count, so PATROL is a clean sweep, SIEGE leaks a few, and
-OVERRUN ends badly on any profile. Level-4 days are fortresses (longer range,
-double damage, splash). Hits slow their target. Leaks strike a core on the right.
+scales with the garrison's firepower rather than its headcount, so a graph with
+no fortress days is not written off. PATROL is a clean sweep, SIEGE leaks a few,
+and OVERRUN comes down to the last wave. Level-4 days are fortresses (longer
+range, double damage, splash). Hits slow their target. Leaks strike a core on
+the right sized to the wave it faces (5 at PATROL, 8 at SIEGE, 12 at OVERRUN),
+so the meter drains across the whole battle instead of bottoming out mid-loop.
 
 `commit-life` uses the same grid. Commit days start alive; empty days start dead.
 Classic B3/S23 runs on a bounded board, then every generation bakes into CSS.
